@@ -9,29 +9,24 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        brand: {
-          50: '#f0f4ff',
-          100: '#d9e2ff',
-          200: '#b7c8ff',
-          300: '#85a2ff',
-          400: '#5272ff',
-          500: '#2642ff',
-          600: '#1125f5',
-          700: '#0b16d5',
-          800: '#0e15ab',
-          900: '#121886',
-          950: '#0a0d4e',
+        warmblue: {
+          50: '#f0f7ff',
+          100: '#e0effe',
+          200: '#bae0fd',
+          300: '#7cc8fc',
+          400: '#36aff7',
+          500: '#0c94e8',
+          600: '#0075c7',
+          700: '#015da3',
+          800: '#064e86',
+          900: '#0b416f',
+          950: '#07294a',
         },
-        patria: {
-          red: '#D91F26',
-          darkRed: '#991116',
-          yellow: '#FFD700',
-          blue: '#00247D',
+        warmnavy: {
+          800: '#111c30',
+          900: '#0b1324',
+          950: '#060a14',
         }
-      },
-      backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'hero-pattern': 'linear-gradient(to right bottom, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92))',
       },
     },
   },

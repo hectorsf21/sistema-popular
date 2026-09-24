@@ -24,28 +24,26 @@ export default function CascadingLocationSelect({
   onReset
 }: CascadingLocationSelectProps) {
   
-  // Parroquias según el municipio elegido
   const parroquiasList = selectedMunicipio && UBICACIONES_DATA[selectedMunicipio]
     ? Object.keys(UBICACIONES_DATA[selectedMunicipio])
     : [];
 
-  // Comunas / Circuitos según la parroquia elegida
   const comunasList = selectedMunicipio && selectedParroquia && UBICACIONES_DATA[selectedMunicipio]?.[selectedParroquia]
     ? UBICACIONES_DATA[selectedMunicipio][selectedParroquia]
     : [];
 
   return (
-    <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3 shadow-lg">
-      <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
-        <div className="flex items-center gap-2 text-xs font-bold text-indigo-400 uppercase tracking-wider">
-          <Filter className="w-4 h-4" />
-          <span>Filtro Jerárquico Territorial (Vercel Ready)</span>
+    <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 shadow-md">
+      <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
+        <div className="flex items-center gap-2 text-xs font-bold text-sky-400 uppercase tracking-wider">
+          <Filter className="w-3.5 h-3.5" />
+          <span>Filtro Jerárquico Territorial</span>
         </div>
 
         {(selectedMunicipio || selectedParroquia || selectedComuna) && (
           <button
             onClick={onReset}
-            className="text-[11px] font-semibold text-slate-400 hover:text-red-400 transition-colors"
+            className="text-[11px] font-semibold text-slate-400 hover:text-sky-400 transition-colors"
           >
             Limpiar Filtros
           </button>
@@ -57,7 +55,7 @@ export default function CascadingLocationSelect({
         {/* 1. Selector de Municipio */}
         <div>
           <label className="block text-[11px] font-semibold text-slate-400 mb-1 flex items-center gap-1">
-            <MapPin className="w-3 h-3 text-indigo-400" />
+            <MapPin className="w-3 h-3 text-sky-400" />
             <span>1. Municipio</span>
           </label>
           <select
@@ -67,7 +65,7 @@ export default function CascadingLocationSelect({
               onChangeParroquia('');
               onChangeComuna('');
             }}
-            className="w-full px-3 py-2 bg-slate-950 border border-slate-700/80 rounded-xl text-white text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+            className="w-full px-3 py-2 bg-[#060a14] border border-slate-800 rounded-xl text-white text-xs focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all"
           >
             <option value="">Todos los Municipios ({MUNICIPIOS_LIST.length})</option>
             {MUNICIPIOS_LIST.map((mun) => (
@@ -78,10 +76,10 @@ export default function CascadingLocationSelect({
           </select>
         </div>
 
-        {/* 2. Selector de Parroquia (Filtrada por Municipio) */}
+        {/* 2. Selector de Parroquia */}
         <div>
           <label className="block text-[11px] font-semibold text-slate-400 mb-1 flex items-center gap-1">
-            <Navigation className="w-3 h-3 text-indigo-400" />
+            <Navigation className="w-3 h-3 text-sky-400" />
             <span>2. Parroquia</span>
           </label>
           <select
@@ -91,7 +89,7 @@ export default function CascadingLocationSelect({
               onChangeParroquia(e.target.value);
               onChangeComuna('');
             }}
-            className="w-full px-3 py-2 bg-slate-950 border border-slate-700/80 rounded-xl text-white text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full px-3 py-2 bg-[#060a14] border border-slate-800 rounded-xl text-white text-xs focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <option value="">
               {!selectedMunicipio
@@ -106,17 +104,17 @@ export default function CascadingLocationSelect({
           </select>
         </div>
 
-        {/* 3. Selector de Comuna / Circuito Comunal (Filtrada por Parroquia) */}
+        {/* 3. Selector de Comuna / Circuito Comunal */}
         <div>
           <label className="block text-[11px] font-semibold text-slate-400 mb-1 flex items-center gap-1">
-            <Layers className="w-3 h-3 text-indigo-400" />
+            <Layers className="w-3 h-3 text-sky-400" />
             <span>3. Comuna / Circuito Comunal</span>
           </label>
           <select
             value={selectedComuna}
             disabled={!selectedParroquia}
             onChange={(e) => onChangeComuna(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-950 border border-slate-700/80 rounded-xl text-white text-xs focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full px-3 py-2 bg-[#060a14] border border-slate-800 rounded-xl text-white text-xs focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <option value="">
               {!selectedParroquia

@@ -10,44 +10,48 @@
 
 body {
   font-family: var(--font-sans);
-  background-color: #0b0f19;
-  color: #f3f4f6;
+  background-color: #080d1a;
+  color: #f1f5f9;
   min-height: 100vh;
 }
 
-/* Glassmorphism custom utils */
+/* Glassmorphism minimalista azul cálido */
 .glass-panel {
-  background: rgba(17, 24, 39, 0.75);
+  background: rgba(15, 25, 45, 0.7);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
 .glass-card {
-  background: rgba(31, 41, 55, 0.6);
+  background: rgba(20, 32, 58, 0.5);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .glass-card:hover {
-  border-color: rgba(99, 102, 241, 0.3);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  border-color: rgba(56, 189, 248, 0.3);
+  box-shadow: 0 8px 30px 0 rgba(0, 117, 199, 0.15);
 }
 
-/* Custom scrollbars */
+/* Scrollbars minimalistas */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #080d1a;
 }
 
 ::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
   background: #334155;
-  border-radius: 4px;
 }
 
 /* Estilos de Impresión / PDF */
@@ -67,7 +71,7 @@ body {
     width: 100%;
     background: white !important;
     color: black !important;
-    padding: 20px;
+    padding: 24px;
   }
 
   .no-print {
