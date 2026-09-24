@@ -1,0 +1,53 @@
+// Prisma schema for Sistema 1x10 (MySQL)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model JefePatrulla {
+  id              String       @id @default(uuid())
+  cedula          String       @unique
+  nombre          String
+  fechaNacimiento String
+  telefono        String?
+  comunidad       String?
+  municipio       String?
+  parroquia       String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  integrantes     Integrante[]
+
+  @@map("jefes_patrulla")
+}
+
+model Integrante {
+  id              String       @id @default(uuid())
+  jefeId          String
+  jefe            JefePatrulla @relation(fields: [jefeId], references: [id], onDelete: Cascade)
+  cedula          String       @unique // Regla del sistema: No se puede repetir en otra patrulla
+  nombre          String
+  fechaNacimiento String
+  telefono        String?
+  comunidad       String?
+  responsabilidad String?      @default("Patrullado")
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([jefeId])
+  @@map("integrantes")
+}
+
+model MasterAdmin {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  nombre    String
+  createdAt DateTime @default(now())
+
+  @@map("master_admins")
+}
