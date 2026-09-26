@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, User, Calendar, Key, CheckCircle2, AlertCircle, Sparkles, FileSpreadsheet } from 'lucide-react';
+import { Shield, User, Calendar, Key, CheckCircle2, AlertCircle, Sparkles, FileSpreadsheet, UserPlus, X, Phone, MapPin } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,6 +14,16 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  // Modal de Registro Estático
+  const [isRegisterOpen, setIsRegisterOpen] = useState(false);
+  const [regNombre, setRegNombre] = useState('');
+  const [regApellido, setRegApellido] = useState('');
+  const [regCedula, setRegCedula] = useState('');
+  const [regTelefono, setRegTelefono] = useState('');
+  const [regComunidad, setRegComunidad] = useState('');
+  const [regFechaNac, setRegFechaNac] = useState('');
+  const [regSuccessMsg, setRegSuccessMsg] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,37 +68,66 @@ export default function LoginPage() {
     setErrorMsg('');
   };
 
+  const handleStaticRegister = (e: React.FormEvent) => {
+    e.preventDefault();
+    setRegSuccessMsg('¡Registro completado exitosamente para la simulación 1X10 COMUNAL GUARICO!');
+    setTimeout(() => {
+      setIsRegisterOpen(false);
+      setRegSuccessMsg('');
+      setRegNombre('');
+      setRegApellido('');
+      setRegCedula('');
+      setRegTelefono('');
+      setRegComunidad('');
+      setRegFechaNac('');
+    }, 2000);
+  };
+
   return (
-    <main className="min-h-screen relative flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#080d1a] to-[#040711] overflow-hidden">
+    <main className="min-h-screen relative flex flex-col items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#080d1a] to-[#040711] overflow-hidden">
       
-      {/* Elementos Decorativos de Fondo de Azul Cálido Minimalista */}
+      {/* Elementos Decorativos de Fondo */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="w-full max-w-md z-10">
+      <div className="w-full max-w-md z-10 flex flex-col items-center">
         
+        {/* LOGO EN EL CENTRO SUPERIOR (Dimensiones: 212px ancho x 204px alto) */}
+        <div className="mb-6 flex justify-center items-center">
+          <img
+            src="/centro.png"
+            onError={(e) => {
+              // Fallback a SVG si centro.png aún no existe
+              (e.target as HTMLImageElement).src = '/centro.svg';
+            }}
+            alt="Logo 1X10 COMUNAL GUARICO"
+            style={{ width: '212px', height: '204px' }}
+            className="object-contain drop-shadow-xl hover:scale-105 transition-transform duration-300"
+          />
+        </div>
+
         {/* Encabezado Principal */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-sky-400 text-xs font-semibold mb-4 shadow-sm">
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-sky-400 text-xs font-semibold mb-3 shadow-sm">
             <Sparkles className="w-3.5 h-3.5" />
             <span>Sistema Organizativo Territorial</span>
           </div>
           
-          <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-blue-400 to-indigo-300">
               1X10 COMUNAL GUARICO
             </span>
           </h1>
           
-          <p className="mt-2 text-xs text-slate-400">
+          <p className="mt-1.5 text-xs text-slate-400">
             Validación de integrantes por Cédula y Fecha de Nacimiento
           </p>
         </div>
 
         {/* Tarjeta del Formulario de Login */}
-        <div className="glass-panel rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden border border-slate-800">
+        <div className="glass-panel w-full rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden border border-slate-800">
           
-          {/* Pestanas Tipo Toggle Minimalistas */}
+          {/* Pestanas Toggle */}
           <div className="flex p-1 bg-slate-900/90 rounded-xl mb-6 border border-slate-800">
             <button
               type="button"
@@ -188,8 +227,20 @@ export default function LoginPage() {
                 )}
               </button>
 
+              {/* BOTÓN REGISTRARTE AQUÍ */}
+              <div className="pt-3 text-center">
+                <button
+                  type="button"
+                  onClick={() => setIsRegisterOpen(true)}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-400 hover:text-sky-300 transition-colors"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>¿No tienes cuenta? Registrarte aquí</span>
+                </button>
+              </div>
+
               {/* Botones de Usuario de Prueba */}
-              <div className="pt-4 border-t border-slate-800/80 mt-6">
+              <div className="pt-4 border-t border-slate-800/80 mt-4">
                 <p className="text-xs text-slate-400 mb-2 font-medium flex items-center gap-1.5">
                   <FileSpreadsheet className="w-3.5 h-3.5 text-sky-400" />
                   <span>Cédulas de prueba (Clic para ingresar):</span>
@@ -263,6 +314,133 @@ export default function LoginPage() {
           1X10 COMUNAL GUARICO • Organización Popular
         </p>
       </div>
+
+      {/* MODAL FORMULARIO ESTÁTICO DE REGISTRO */}
+      {isRegisterOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="glass-panel w-full max-w-lg rounded-2xl p-6 border border-slate-800 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            
+            <button
+              onClick={() => setIsRegisterOpen(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-xl bg-sky-950 border border-sky-800 text-sky-400 flex items-center justify-center">
+                <UserPlus className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Registro de Jefe de Patrulla</h3>
+                <p className="text-xs text-slate-400">Formulario estático de simulación 1x10</p>
+              </div>
+            </div>
+
+            {regSuccessMsg ? (
+              <div className="p-4 rounded-xl bg-emerald-950/80 border border-emerald-800 text-emerald-200 text-xs flex items-center gap-3">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                <span>{regSuccessMsg}</span>
+              </div>
+            ) : (
+              <form onSubmit={handleStaticRegister} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">Nombre</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ej: Juan"
+                      value={regNombre}
+                      onChange={(e) => setRegNombre(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">Apellido</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ej: Pérez"
+                      value={regApellido}
+                      onChange={(e) => setRegApellido(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">Cédula de Identidad</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ej: V-12345678"
+                      value={regCedula}
+                      onChange={(e) => setRegCedula(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">Número Telefónico</label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="Ej: 0414-1234567"
+                      value={regTelefono}
+                      onChange={(e) => setRegTelefono(e.target.value)}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Centro Comunal / Comunidad</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej: Comuna El Sueño de Chávez"
+                    value={regComunidad}
+                    onChange={(e) => setRegComunidad(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Fecha de Nacimiento</label>
+                  <input
+                    type="date"
+                    required
+                    value={regFechaNac}
+                    onChange={(e) => setRegFechaNac(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsRegisterOpen(false)}
+                    className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shadow-lg shadow-sky-600/20"
+                  >
+                    Enviar Registro
+                  </button>
+                </div>
+              </form>
+            )}
+
+          </div>
+        </div>
+      )}
+
     </main>
   );
 }

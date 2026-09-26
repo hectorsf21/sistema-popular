@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Users, UserPlus, LogOut, CheckCircle2, AlertCircle, Trash2, Edit3,
-  Search, Shield, MapPin, Phone, Calendar, X, Server
+  Search, MapPin, Phone, X, Server
 } from 'lucide-react';
 import CloudpanelGuideModal from '@/components/CloudpanelGuideModal';
 
@@ -84,7 +84,6 @@ export default function DashboardPage() {
     router.push('/login');
   };
 
-  // Buscar Cédula en Padrón Excel
   const handleVerifyCedula = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchCedula) return;
@@ -113,7 +112,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Guardar Nuevo Integrante (Sin roles)
   const handleConfirmAddMember = async () => {
     if (!foundPerson) return;
     setVerifyingCedula(true);
@@ -152,7 +150,6 @@ export default function DashboardPage() {
     setAddError('');
   };
 
-  // Guardar Edición (Solo Teléfono)
   const handleSaveEdit = async () => {
     if (!selectedMember) return;
 
@@ -179,7 +176,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Eliminar Integrante
   const handleConfirmDelete = async () => {
     if (!selectedMember) return;
 
@@ -229,36 +225,54 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Navbar Superior Minimalista Azul Cálido */}
+      {/* HEADER SUPERIOR CON DOS LOGOS (Izquierda 245x111, Derecha 181x151) */}
       <header className="sticky top-0 z-30 bg-[#0b1326]/90 backdrop-blur-md border-b border-slate-800/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-blue-600 flex items-center justify-center font-black text-white shadow-md shadow-sky-600/20">
-              1x10
-            </div>
-            <div>
-              <h1 className="font-extrabold text-white text-base leading-tight tracking-tight">1X10 COMUNAL GUARICO</h1>
-              <p className="text-[11px] text-slate-400">Panel del Jefe de Patrulla</p>
-            </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-between gap-4">
+          
+          {/* LOGO IZQUIERDO SUPERIOR (245px ancho x 111px alto) */}
+          <div className="flex items-center gap-3 shrink-0">
+            <img
+              src="/izquierda.jpg"
+              onError={(e) => { (e.target as HTMLImageElement).src = '/izquierda.svg'; }}
+              alt="Logo Izquierdo"
+              style={{ width: '245px', height: '111px' }}
+              className="object-contain max-h-16 w-auto"
+            />
           </div>
 
-          <div className="flex items-center gap-3">
+          {/* Título Central */}
+          <div className="hidden lg:block text-center">
+            <h1 className="font-extrabold text-white text-lg tracking-tight">1X10 COMUNAL GUARICO</h1>
+            <p className="text-xs text-slate-400">Panel del Jefe de Patrulla</p>
+          </div>
+
+          {/* LOGO DERECHO SUPERIOR (181px ancho x 151px alto) & Botones */}
+          <div className="flex items-center gap-4 shrink-0">
             <button
               onClick={() => setIsGuideOpen(true)}
               className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold border border-slate-700 transition-colors"
             >
               <Server className="w-3.5 h-3.5 text-sky-400" />
-              <span>Guía CloudPanel</span>
+              <span>CloudPanel</span>
             </button>
 
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-semibold transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-semibold transition-colors"
             >
               <LogOut className="w-3.5 h-3.5 text-slate-400" />
               <span>Salir</span>
             </button>
+
+            <img
+              src="/derecha.png"
+              onError={(e) => { (e.target as HTMLImageElement).src = '/derecha.svg'; }}
+              alt="Logo Derecho"
+              style={{ width: '181px', height: '151px' }}
+              className="object-contain max-h-16 w-auto"
+            />
           </div>
+
         </div>
       </header>
 
@@ -317,7 +331,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Listado de Integrantes Minimalista (10 Cupos) */}
+        {/* Listado de Integrantes (10 Cupos) */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-bold text-white flex items-center gap-2">
@@ -355,7 +369,6 @@ export default function DashboardPage() {
                     </div>
                   </div>
 
-                  {/* Acciones Editar / Eliminar */}
                   <div className="flex items-center gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => {
@@ -383,7 +396,6 @@ export default function DashboardPage() {
               </div>
             ))}
 
-            {/* Cupos vacíos minimalistas */}
             {Array.from({ length: 10 - integrantesCount }).map((_, idx) => (
               <div
                 key={`empty-${idx}`}
@@ -409,7 +421,7 @@ export default function DashboardPage() {
 
       </main>
 
-      {/* MODAL 1: INGRESAR INTEGRANTE (SIN ROLES) */}
+      {/* MODAL 1: INGRESAR INTEGRANTE */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="glass-panel w-full max-w-md rounded-2xl p-6 border border-slate-800 shadow-2xl relative">
@@ -521,7 +533,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* MODAL 2: EDITAR INTEGRANTE (SOLO TELÉFONO) */}
+      {/* MODAL 2: EDITAR INTEGRANTE */}
       {isEditModalOpen && selectedMember && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="glass-panel w-full max-w-md rounded-2xl p-6 border border-slate-800 shadow-2xl relative">

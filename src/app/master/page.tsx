@@ -246,41 +246,59 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
   return (
     <div className="min-h-screen bg-[#080d1a] text-slate-100 pb-16">
       
-      {/* Navbar Superior Minimalista Azul Cálido */}
+      {/* HEADER SUPERIOR CON DOS LOGOS (Izquierda 245x111, Derecha 181x151) */}
       <header className="sticky top-0 z-30 bg-[#0b1326]/90 backdrop-blur-md border-b border-slate-800/80 no-print">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-blue-600 flex items-center justify-center font-black text-white shadow-md shadow-sky-600/20">
-              <Shield className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="font-extrabold text-white text-base leading-tight tracking-tight">1X10 COMUNAL GUARICO</h1>
-                <span className="px-2 py-0.5 rounded bg-sky-950 text-sky-400 text-[10px] font-bold border border-sky-800">
-                  MASTER ADMIN
-                </span>
-              </div>
-              <p className="text-xs text-slate-400">Supervisión Territorial 1x10</p>
-            </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-between gap-4">
+          
+          {/* LOGO IZQUIERDO SUPERIOR (245px ancho x 111px alto) */}
+          <div className="flex items-center gap-3 shrink-0">
+            <img
+              src="/izquierda.jpg"
+              onError={(e) => { (e.target as HTMLImageElement).src = '/izquierda.svg'; }}
+              alt="Logo Izquierdo"
+              style={{ width: '245px', height: '111px' }}
+              className="object-contain max-h-16 w-auto"
+            />
           </div>
 
-          <div className="flex items-center gap-3">
+          {/* Título Central */}
+          <div className="hidden lg:block text-center">
+            <div className="flex items-center justify-center gap-2">
+              <h1 className="font-extrabold text-white text-lg tracking-tight">1X10 COMUNAL GUARICO</h1>
+              <span className="px-2 py-0.5 rounded bg-sky-950 text-sky-400 text-[10px] font-bold border border-sky-800">
+                MASTER ADMIN
+              </span>
+            </div>
+            <p className="text-xs text-slate-400">Supervisión Territorial 1x10</p>
+          </div>
+
+          {/* LOGO DERECHO SUPERIOR (181px ancho x 151px alto) & Botones */}
+          <div className="flex items-center gap-4 shrink-0">
             <button
               onClick={() => setIsGuideOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold border border-slate-700 transition-colors"
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold border border-slate-700 transition-colors"
             >
               <Server className="w-3.5 h-3.5 text-sky-400" />
-              <span>Guía CloudPanel</span>
+              <span>CloudPanel</span>
             </button>
 
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-semibold transition-colors"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-semibold transition-colors"
             >
               <LogOut className="w-3.5 h-3.5 text-slate-400" />
               <span>Salir</span>
             </button>
+
+            <img
+              src="/derecha.png"
+              onError={(e) => { (e.target as HTMLImageElement).src = '/derecha.svg'; }}
+              alt="Logo Derecho"
+              style={{ width: '181px', height: '151px' }}
+              className="object-contain max-h-16 w-auto"
+            />
           </div>
+
         </div>
       </header>
 
@@ -460,7 +478,7 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
         </div>
       </main>
 
-      {/* MODAL CON IMPRESIÓN PDF (SIN COLUMNA DE ROLES) */}
+      {/* MODAL CON IMPRESIÓN PDF */}
       {(selectedJefeModal || loadingJefeDetails) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in no-print">
           <div className="glass-panel w-full max-w-2xl rounded-2xl p-6 border border-slate-800 shadow-2xl relative max-h-[90vh] flex flex-col">
@@ -512,7 +530,6 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
                   </div>
                 </div>
 
-                {/* Lista de Integrantes (Sin roles) */}
                 <div className="overflow-y-auto space-y-2.5 pr-2 flex-1">
                   {selectedJefeModal.integrantes.length === 0 ? (
                     <div className="p-8 text-center text-slate-400 text-xs bg-slate-900/60 rounded-xl border border-slate-800">
