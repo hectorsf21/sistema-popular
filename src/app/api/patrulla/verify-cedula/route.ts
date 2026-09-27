@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { verifyPersonInExcel } from '@/lib/python';
-import { checkIntegranteExists, getJefeWithIntegrantes } from '@/lib/store';
+import { checkPersonExistsInDB, getJefeWithIntegrantes } from '@/lib/store';
 
 export async function POST(request: Request) {
   try {
@@ -24,17 +24,18 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // 2. Verificar si la Cédula ya pertenece a OTRA patrulla (Regla de Exclusividad / No duplicidad)
-    const existsCheck = await checkIntegranteExists(cedula);
-    if (existsCheck.exists) {
+    // 2. Verificar si la Cédula ya pertenece a OTRA patrulla o es un Jefe de Patrulla en la BD
+    const dbCheck = await checkPersonExistsInDB(cedula);
+    if (dbCheck.exists) {
       return NextResponse.json({
         success: false,
-        message: `Esta persona con cédula ${cedula} ya pertenece a la patrulla 1x10 de "${existsCheck.jefeNombre}". No se puede duplicar en otra parte.`
+        message: dbCheck.detail || `Esta persona con cédula ${cedula} ya se encuentra registrada en el sistema y no se puede duplicar.`
       }, { status: 409 });
     }
 
     // 3. Verificar la Cédula en el padrón electoral Excel mediante Python
     const excelCheck = await verifyPersonInExcel(cedula);
+
     if (!excelCheck.success || !excelCheck.data) {
       return NextResponse.json({
         success: false,

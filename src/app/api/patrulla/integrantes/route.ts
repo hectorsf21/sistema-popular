@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import {
   addIntegrante,
-  checkIntegranteExists,
+  checkPersonExistsInDB,
   deleteIntegrante,
   getJefeWithIntegrantes,
   updateIntegrante
@@ -32,12 +32,12 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // 2. Validar regla de exclusividad / no duplicidad
-    const existsCheck = await checkIntegranteExists(cedula);
-    if (existsCheck.exists) {
+    // 2. Validar regla de exclusividad / no duplicidad (Jefe o Integrante en cualquier patrulla)
+    const dbCheck = await checkPersonExistsInDB(cedula);
+    if (dbCheck.exists) {
       return NextResponse.json({
         success: false,
-        message: `La persona con cédula ${cedula} ya fue agregada como integrante en otra patrulla (${existsCheck.jefeNombre}).`
+        message: dbCheck.detail || `La persona con cédula ${cedula} ya se encuentra registrada en el sistema y no puede ser agregada a otra lista.`
       }, { status: 409 });
     }
 

@@ -126,6 +126,88 @@ export async function checkIntegranteExists(cedula: string): Promise<{ exists: b
   return { exists: false };
 }
 
+export async function checkPersonExistsInDB(cedulaInput: string): Promise<{
+  exists: boolean;
+  role?: 'jefe' | 'integrante';
+  jefeNombre?: string;
+  detail?: string;
+}> {
+  const norm = cedulaInput.trim().toUpperCase().replace(/[\.\s\-]/g, '');
+  const cleanKeyFormatted = norm.startsWith('V') ? `V-${norm.slice(1)}` : `V-${norm}`;
+
+  try {
+    const jefe = await prisma.jefePatrulla.findFirst({
+      where: {
+        OR: [
+          { cedula: cedulaInput },
+          { cedula: norm },
+          { cedula: cleanKeyFormatted }
+        ]
+      }
+    });
+
+    if (jefe) {
+      return {
+        exists: true,
+        role: 'jefe',
+        detail: `La persona con cédula ${cedulaInput} ya está registrada como Jefe de Patrulla (${jefe.nombre}).`
+      };
+    }
+
+    const integrante = await prisma.integrante.findFirst({
+      where: {
+        OR: [
+          { cedula: cedulaInput },
+          { cedula: norm },
+          { cedula: cleanKeyFormatted }
+        ]
+      },
+      include: {
+        jefe: { select: { nombre: true } }
+      }
+    });
+
+    if (integrante) {
+      return {
+        exists: true,
+        role: 'integrante',
+        jefeNombre: integrante.jefe?.nombre || 'Otro Jefe de Patrulla',
+        detail: `La persona con cédula ${cedulaInput} ya pertenece a la patrulla 1x10 de "${integrante.jefe?.nombre || 'Otro Jefe de Patrulla'}".`
+      };
+    }
+  } catch (error) {
+    console.warn('Prisma DB query checkPersonExistsInDB fallback to memory:', error);
+  }
+
+  // Memory checks
+  for (const j of memoryJefes.values()) {
+    const jNorm = j.cedula.toUpperCase().replace(/[\.\s\-]/g, '');
+    if (jNorm === norm || j.cedula === cleanKeyFormatted || j.cedula === cedulaInput) {
+      return {
+        exists: true,
+        role: 'jefe',
+        detail: `La persona con cédula ${cedulaInput} ya está registrada como Jefe de Patrulla (${j.nombre}).`
+      };
+    }
+  }
+
+  for (const i of memoryIntegrantes.values()) {
+    const iNorm = i.cedula.toUpperCase().replace(/[\.\s\-]/g, '');
+    if (iNorm === norm || i.cedula === cleanKeyFormatted || i.cedula === cedulaInput) {
+      const jefe = Array.from(memoryJefes.values()).find(j => j.id === i.jefeId);
+      return {
+        exists: true,
+        role: 'integrante',
+        jefeNombre: jefe?.nombre || 'Otro Jefe de Patrulla',
+        detail: `La persona con cédula ${cedulaInput} ya pertenece a la patrulla 1x10 de "${jefe?.nombre || 'Otro Jefe de Patrulla'}".`
+      };
+    }
+  }
+
+  return { exists: false };
+}
+
+
 export async function addIntegrante(data: {
   jefeId: string;
   cedula: string;
@@ -247,6 +329,8 @@ export async function getAllJefesWithStats() {
         id: j.id,
         cedula: j.cedula,
         nombre: j.nombre,
+        municipio: j.municipio || '',
+        parroquia: j.parroquia || '',
         comunidad: j.comunidad || 'Sin comunidad',
         totalIntegrantes: j.integrantes.length,
         isCompleted: j.integrantes.length >= 10,

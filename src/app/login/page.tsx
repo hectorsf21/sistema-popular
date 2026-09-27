@@ -15,7 +15,7 @@ export default function LoginPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  // Modal de Registro Estático
+  // Modal de Registro Real
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [regNombre, setRegNombre] = useState('');
   const [regApellido, setRegApellido] = useState('');
@@ -24,6 +24,8 @@ export default function LoginPage() {
   const [regComunidad, setRegComunidad] = useState('');
   const [regFechaNac, setRegFechaNac] = useState('');
   const [regSuccessMsg, setRegSuccessMsg] = useState('');
+  const [regErrorMsg, setRegErrorMsg] = useState('');
+  const [regLoading, setRegLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,19 +70,54 @@ export default function LoginPage() {
     setErrorMsg('');
   };
 
-  const handleStaticRegister = (e: React.FormEvent) => {
+  const resetRegForm = () => {
+    setRegNombre('');
+    setRegApellido('');
+    setRegCedula('');
+    setRegTelefono('');
+    setRegComunidad('');
+    setRegFechaNac('');
+    setRegSuccessMsg('');
+    setRegErrorMsg('');
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setRegSuccessMsg('¡Registro completado exitosamente para la simulación 1X10 COMUNAL GUARICO!');
-    setTimeout(() => {
-      setIsRegisterOpen(false);
-      setRegSuccessMsg('');
-      setRegNombre('');
-      setRegApellido('');
-      setRegCedula('');
-      setRegTelefono('');
-      setRegComunidad('');
-      setRegFechaNac('');
-    }, 2000);
+    setRegLoading(true);
+    setRegErrorMsg('');
+    setRegSuccessMsg('');
+
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: regNombre,
+          apellido: regApellido,
+          cedula: regCedula,
+          telefono: regTelefono,
+          comunidad: regComunidad,
+          fechaNacimiento: regFechaNac,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setRegErrorMsg(data.message || 'Error al procesar el registro.');
+        setRegLoading(false);
+        return;
+      }
+
+      setRegSuccessMsg(`¡${data.message || 'Registro completado!'} Redirigiendo...`);
+      setTimeout(() => {
+        router.push(data.redirectUrl || '/dashboard');
+      }, 1500);
+
+    } catch (err) {
+      setRegErrorMsg('Ocurrió un error de conexión con el servidor.');
+      setRegLoading(false);
+    }
   };
 
   return (
@@ -238,34 +275,8 @@ export default function LoginPage() {
                   <span>¿No tienes cuenta? Registrarte aquí</span>
                 </button>
               </div>
-
-              {/* Botones de Usuario de Prueba */}
-              <div className="pt-4 border-t border-slate-800/80 mt-4">
-                <p className="text-xs text-slate-400 mb-2 font-medium flex items-center gap-1.5">
-                  <FileSpreadsheet className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Cédulas de prueba (Clic para ingresar):</span>
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => fillDemoUser('V-14893609', '1980-07-26')}
-                    className="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-left transition-colors"
-                  >
-                    <div className="text-xs font-semibold text-slate-200">Dayana Herrera</div>
-                    <div className="text-[10px] text-slate-400">V-14893609 • 26/07/1980</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => fillDemoUser('V-14893613', '1980-11-14')}
-                    className="p-2 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-left transition-colors"
-                  >
-                    <div className="text-xs font-semibold text-slate-200">Alfonzo Hernández</div>
-                    <div className="text-[10px] text-slate-400">V-14893613 • 14/11/1980</div>
-                  </button>
-                </div>
-              </div>
             </form>
+
           ) : (
             /* Formulario Login Master Admin */
             <form onSubmit={handleLogin} className="space-y-4">
@@ -280,15 +291,12 @@ export default function LoginPage() {
                   <input
                     type="password"
                     required
-                    placeholder="Clave Master (Ej: admin123)"
+                    placeholder="Ingrese su clave de administrador"
                     value={masterKey}
                     onChange={(e) => setMasterKey(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all"
                   />
                 </div>
-                <p className="mt-1.5 text-[11px] text-slate-400">
-                  Clave de demostración: <code className="text-sky-300 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">admin123</code>
-                </p>
               </div>
 
               <button
@@ -333,7 +341,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <h3 className="text-base font-bold text-white">Registro de Jefe de Patrulla</h3>
-                <p className="text-xs text-slate-400">Formulario estático de simulación 1x10</p>
+                <p className="text-xs text-slate-400">Solo para nuevos usuarios (15 a 18 años)</p>
               </div>
             </div>
 
@@ -343,7 +351,16 @@ export default function LoginPage() {
                 <span>{regSuccessMsg}</span>
               </div>
             ) : (
-              <form onSubmit={handleStaticRegister} className="space-y-4">
+              <form onSubmit={handleRegister} className="space-y-4">
+
+                {/* Error de Registro */}
+                {regErrorMsg && (
+                  <div className="p-3.5 rounded-xl bg-red-950/70 border border-red-800/60 text-red-200 text-xs flex items-start gap-2.5">
+                    <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                    <span>{regErrorMsg}</span>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-slate-300 mb-1">Nombre</label>
@@ -353,7 +370,7 @@ export default function LoginPage() {
                       placeholder="Ej: Juan"
                       value={regNombre}
                       onChange={(e) => setRegNombre(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
                     />
                   </div>
 
@@ -365,7 +382,7 @@ export default function LoginPage() {
                       placeholder="Ej: Pérez"
                       value={regApellido}
                       onChange={(e) => setRegApellido(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
                     />
                   </div>
                 </div>
@@ -378,8 +395,8 @@ export default function LoginPage() {
                       required
                       placeholder="Ej: V-12345678"
                       value={regCedula}
-                      onChange={(e) => setRegCedula(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                      onChange={(e) => { setRegCedula(e.target.value); setRegErrorMsg(''); }}
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
                     />
                   </div>
 
@@ -387,11 +404,10 @@ export default function LoginPage() {
                     <label className="block text-xs font-medium text-slate-300 mb-1">Número Telefónico</label>
                     <input
                       type="tel"
-                      required
                       placeholder="Ej: 0414-1234567"
                       value={regTelefono}
                       onChange={(e) => setRegTelefono(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                      className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
                     />
                   </div>
                 </div>
@@ -400,38 +416,49 @@ export default function LoginPage() {
                   <label className="block text-xs font-medium text-slate-300 mb-1">Centro Comunal / Comunidad</label>
                   <input
                     type="text"
-                    required
                     placeholder="Ej: Comuna El Sueño de Chávez"
                     value={regComunidad}
                     onChange={(e) => setRegComunidad(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Fecha de Nacimiento</label>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                    Fecha de Nacimiento
+                    <span className="ml-2 text-sky-400/80 font-normal">(Debe tener entre 15 y 18 años)</span>
+                  </label>
                   <input
                     type="date"
                     required
                     value={regFechaNac}
-                    onChange={(e) => setRegFechaNac(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs"
+                    onChange={(e) => { setRegFechaNac(e.target.value); setRegErrorMsg(''); }}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
                   />
                 </div>
 
                 <div className="flex justify-end gap-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => setIsRegisterOpen(false)}
+                    onClick={() => { setIsRegisterOpen(false); resetRegForm(); }}
                     className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold"
+                    disabled={regLoading}
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shadow-lg shadow-sky-600/20"
+                    disabled={regLoading}
+                    className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shadow-lg shadow-sky-600/20 flex items-center gap-2 disabled:opacity-60"
                   >
-                    Enviar Registro
+                    {regLoading ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Registrando...</span>
+                      </>
+                    ) : (
+                      <span>Registrarme</span>
+                    )}
                   </button>
                 </div>
               </form>
