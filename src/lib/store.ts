@@ -136,24 +136,8 @@ export async function checkPersonExistsInDB(cedulaInput: string): Promise<{
   const cleanKeyFormatted = norm.startsWith('V') ? `V-${norm.slice(1)}` : `V-${norm}`;
 
   try {
-    const jefe = await prisma.jefePatrulla.findFirst({
-      where: {
-        OR: [
-          { cedula: cedulaInput },
-          { cedula: norm },
-          { cedula: cleanKeyFormatted }
-        ]
-      }
-    });
-
-    if (jefe) {
-      return {
-        exists: true,
-        role: 'jefe',
-        detail: `La persona con cédula ${cedulaInput} ya está registrada como Jefe de Patrulla (${jefe.nombre}).`
-      };
-    }
-
+    // Permitido: los Jefes de Patrulla SÍ pueden ser parte del 1x10 de otro Jefe.
+    // Solo validamos que la persona no pertenezca ya como integrante a otra patrulla.
     const integrante = await prisma.integrante.findFirst({
       where: {
         OR: [
@@ -179,18 +163,7 @@ export async function checkPersonExistsInDB(cedulaInput: string): Promise<{
     console.warn('Prisma DB query checkPersonExistsInDB fallback to memory:', error);
   }
 
-  // Memory checks
-  for (const j of memoryJefes.values()) {
-    const jNorm = j.cedula.toUpperCase().replace(/[\.\s\-]/g, '');
-    if (jNorm === norm || j.cedula === cleanKeyFormatted || j.cedula === cedulaInput) {
-      return {
-        exists: true,
-        role: 'jefe',
-        detail: `La persona con cédula ${cedulaInput} ya está registrada como Jefe de Patrulla (${j.nombre}).`
-      };
-    }
-  }
-
+  // Check memory (solo integrantes)
   for (const i of memoryIntegrantes.values()) {
     const iNorm = i.cedula.toUpperCase().replace(/[\.\s\-]/g, '');
     if (iNorm === norm || i.cedula === cleanKeyFormatted || i.cedula === cedulaInput) {
@@ -206,7 +179,6 @@ export async function checkPersonExistsInDB(cedulaInput: string): Promise<{
 
   return { exists: false };
 }
-
 
 export async function addIntegrante(data: {
   jefeId: string;
