@@ -320,10 +320,10 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3 shrink-0">
             <img
               src="/izquierda.png"
-              onError={(e) => { (e.target as HTMLImageElement).src = '/izquierda.svg'; }}
               alt="Logo Izquierdo"
-              style={{ width: '245px', height: '111px' }}
-              className="object-contain max-h-16 w-auto"
+              width={245}
+              height={111}
+              className="object-contain max-h-16 w-auto block"
             />
           </div>
 
