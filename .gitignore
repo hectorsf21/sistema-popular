@@ -32,3 +32,6 @@ prisma/*.db-journal
 # OS metadata
 .DS_Store
 Thumbs.db
+
+data/padron.db
+*.db
