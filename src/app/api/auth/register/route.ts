@@ -10,15 +10,16 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { nombre, apellido, cedula, telefono, comunidad, fechaNacimiento } = body;
 
-    if (!nombre || !apellido || !cedula || !fechaNacimiento) {
+    // Validación estricta: ningún campo puede estar vacío
+    if (!nombre || !apellido || !cedula || !telefono || !comunidad || !fechaNacimiento) {
       return NextResponse.json(
-        { success: false, message: 'Por favor complete todos los campos obligatorios.' },
+        { success: false, message: 'Todos los campos son obligatorios (nombre, apellido, cédula, teléfono, comunidad y fecha de nacimiento).' },
         { status: 400 }
       );
     }
 
     const normCedula = cedula.trim().toUpperCase().replace(/[\.\s\-]/g, '');
-    const cleanCedula = normCedula.startsWith('V') ? `V-${normCedula.slice(1)}` : `V-${normCedula}`;
+    const cleanCedula = normCedula.startsWith('V') ? `V-${normCedula.slice(1)}` : (normCedula.startsWith('E') ? `E-${normCedula.slice(1)}` : `V-${normCedula}`);
     const fullName = `${nombre.trim()} ${apellido.trim()}`.toUpperCase();
 
     // 1. Validar rango de edad (15 a 18 años) para el registro manual
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Verificar duplicidad en la Base de Datos (Jefe o Integrante)
+    // 2. Verificar duplicidad en la Base de Datos
     const dbCheck = await checkPersonExistsInDB(cleanCedula);
     if (dbCheck.exists) {
       return NextResponse.json(
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Verificar si ya se encuentra en el documento de Excel
+    // 3. Verificar si ya se encuentra en el padrón
     const excelCheck = await verifyPersonInExcel(cleanCedula);
     if (excelCheck.success && excelCheck.data) {
       return NextResponse.json(
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 4. Crear nuevo JefePatrulla en la base de datos MySQL con Prisma
+    // 4. Crear nuevo JefePatrulla en MySQL con Prisma
     let jefe = null;
     try {
       jefe = await prisma.jefePatrulla.create({
@@ -56,17 +57,17 @@ export async function POST(request: Request) {
           cedula: cleanCedula,
           nombre: fullName,
           fechaNacimiento,
-          telefono: telefono || null,
-          comunidad: comunidad || 'Comunidad General',
+          telefono: telefono.trim(),
+          comunidad: comunidad.trim(),
         }
       });
     } catch (dbError) {
-      console.warn('Prisma DB error al registrar Jefe (creando sesión de respaldo):', dbError);
+      console.warn('Prisma DB error al registrar Jefe:', dbError);
       jefe = {
         id: `temp-${cleanCedula}`,
         cedula: cleanCedula,
         nombre: fullName,
-        comunidad: comunidad || 'Comunidad General',
+        comunidad: comunidad.trim(),
       };
     }
 
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
       cedula: jefe.cedula,
       nombre: jefe.nombre,
       role: 'jefe',
-      comunidad: jefe.comunidad || 'Comunidad General',
+      comunidad: jefe.comunidad || comunidad.trim(),
     });
 
     return NextResponse.json({

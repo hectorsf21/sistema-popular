@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, User, Calendar, Key, CheckCircle2, AlertCircle, Sparkles, FileSpreadsheet, UserPlus, X, Phone, MapPin } from 'lucide-react';
+import { Shield, User, Calendar, Key, CheckCircle2, AlertCircle, Sparkles, UserPlus, X } from 'lucide-react';
+import SearchableComunidadSelect from '@/components/SearchableComunidadSelect';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,7 +16,7 @@ export default function LoginPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  // Modal de Registro Real
+  // Modal de Registro
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
   const [regNombre, setRegNombre] = useState('');
   const [regApellido, setRegApellido] = useState('');
@@ -64,12 +65,6 @@ export default function LoginPage() {
     }
   };
 
-  const fillDemoUser = (demoCed: string, demoDob: string) => {
-    setCedula(demoCed);
-    setFechaNacimiento(demoDob);
-    setErrorMsg('');
-  };
-
   const resetRegForm = () => {
     setRegNombre('');
     setRegApellido('');
@@ -87,16 +82,23 @@ export default function LoginPage() {
     setRegErrorMsg('');
     setRegSuccessMsg('');
 
+    // Validación estricta de todos los campos
+    if (!regNombre.trim() || !regApellido.trim() || !regCedula.trim() || !regTelefono.trim() || !regComunidad.trim() || !regFechaNac) {
+      setRegErrorMsg('Todos los campos son obligatorios, incluyendo el teléfono y el circuito comunal.');
+      setRegLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          nombre: regNombre,
-          apellido: regApellido,
-          cedula: regCedula,
-          telefono: regTelefono,
-          comunidad: regComunidad,
+          nombre: regNombre.trim(),
+          apellido: regApellido.trim(),
+          cedula: regCedula.trim(),
+          telefono: regTelefono.trim(),
+          comunidad: regComunidad.trim(),
           fechaNacimiento: regFechaNac,
         }),
       });
@@ -123,27 +125,21 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen relative flex flex-col items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#080d1a] to-[#040711] overflow-hidden">
       
-      {/* Elementos Decorativos de Fondo */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-md z-10 flex flex-col items-center">
         
-        {/* LOGO EN EL CENTRO SUPERIOR (Dimensiones: 212px ancho x 204px alto) */}
         <div className="mb-6 flex justify-center items-center">
           <img
             src="/centro.png"
-            onError={(e) => {
-              // Fallback a SVG si centro.png aún no existe
-              (e.target as HTMLImageElement).src = '/centro.svg';
-            }}
+            onError={(e) => { (e.target as HTMLImageElement).src = '/centro.svg'; }}
             alt="Logo 1X10 COMUNAL GUARICO"
             style={{ width: '212px', height: '204px' }}
             className="object-contain drop-shadow-xl hover:scale-105 transition-transform duration-300"
           />
         </div>
 
-        {/* Encabezado Principal */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-sky-400 text-xs font-semibold mb-3 shadow-sm">
             <Sparkles className="w-3.5 h-3.5" />
@@ -161,10 +157,8 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Tarjeta del Formulario de Login */}
         <div className="glass-panel w-full rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden border border-slate-800">
           
-          {/* Pestanas Toggle */}
           <div className="flex p-1 bg-slate-900/90 rounded-xl mb-6 border border-slate-800">
             <button
               type="button"
@@ -193,7 +187,6 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {/* Alert Error */}
           {errorMsg && (
             <div className="mb-5 p-3.5 rounded-xl bg-red-950/60 border border-red-800/60 text-red-200 text-xs flex items-start gap-2.5">
               <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
@@ -201,7 +194,6 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Alert Success */}
           {successMsg && (
             <div className="mb-5 p-3.5 rounded-xl bg-emerald-950/60 border border-emerald-800/60 text-emerald-200 text-xs flex items-start gap-2.5">
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
@@ -209,7 +201,6 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* Formulario Login Jefe de Patrulla */}
           {activeTab === 'jefe' ? (
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
@@ -223,7 +214,7 @@ export default function LoginPage() {
                   <input
                     type="text"
                     required
-                    placeholder="Ej: V-14893609"
+                    placeholder="Ej: 20522748 o V-20522748"
                     value={cedula}
                     onChange={(e) => setCedula(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700/80 rounded-xl text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all"
@@ -257,14 +248,13 @@ export default function LoginPage() {
                 {loading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>Verificando Padrón...</span>
+                    <span>Verificando...</span>
                   </>
                 ) : (
                   <span>Ingresar a 1X10 COMUNAL GUARICO</span>
                 )}
               </button>
 
-              {/* BOTÓN REGISTRARTE AQUÍ */}
               <div className="pt-3 text-center">
                 <button
                   type="button"
@@ -278,7 +268,6 @@ export default function LoginPage() {
             </form>
 
           ) : (
-            /* Formulario Login Master Admin */
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
                 <label className="block text-xs font-medium text-slate-300 mb-1.5">
@@ -317,13 +306,12 @@ export default function LoginPage() {
           )}
         </div>
 
-        {/* Footer info */}
         <p className="text-center text-xs text-slate-500 mt-6">
           1X10 COMUNAL GUARICO • Organización Popular
         </p>
       </div>
 
-      {/* MODAL FORMULARIO ESTÁTICO DE REGISTRO */}
+      {/* MODAL REGISTRO CON CAMPOS OBLIGATORIOS Y SELECTOR */}
       {isRegisterOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <div className="glass-panel w-full max-w-lg rounded-2xl p-6 border border-slate-800 shadow-2xl relative max-h-[90vh] overflow-y-auto">
@@ -341,7 +329,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <h3 className="text-base font-bold text-white">Registro de Jefe de Patrulla</h3>
-                <p className="text-xs text-slate-400">Solo para nuevos usuarios (15 a 18 años)</p>
+                <p className="text-xs text-slate-400">Todos los campos son obligatorios</p>
               </div>
             </div>
 
@@ -353,7 +341,6 @@ export default function LoginPage() {
             ) : (
               <form onSubmit={handleRegister} className="space-y-4">
 
-                {/* Error de Registro */}
                 {regErrorMsg && (
                   <div className="p-3.5 rounded-xl bg-red-950/70 border border-red-800/60 text-red-200 text-xs flex items-start gap-2.5">
                     <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
@@ -363,7 +350,9 @@ export default function LoginPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">Nombre</label>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                      Nombre <span className="text-red-400">*</span>
+                    </label>
                     <input
                       type="text"
                       required
@@ -375,7 +364,9 @@ export default function LoginPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">Apellido</label>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                      Apellido <span className="text-red-400">*</span>
+                    </label>
                     <input
                       type="text"
                       required
@@ -389,7 +380,9 @@ export default function LoginPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">Cédula de Identidad</label>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                      Cédula de Identidad <span className="text-red-400">*</span>
+                    </label>
                     <input
                       type="text"
                       required
@@ -401,9 +394,12 @@ export default function LoginPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-medium text-slate-300 mb-1">Número Telefónico</label>
+                    <label className="block text-xs font-medium text-slate-300 mb-1">
+                      Número Telefónico <span className="text-red-400">*</span>
+                    </label>
                     <input
                       type="tel"
+                      required
                       placeholder="Ej: 0414-1234567"
                       value={regTelefono}
                       onChange={(e) => setRegTelefono(e.target.value)}
@@ -412,20 +408,16 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Centro Comunal / Comunidad</label>
-                  <input
-                    type="text"
-                    placeholder="Ej: Comuna El Sueño de Chávez"
-                    value={regComunidad}
-                    onChange={(e) => setRegComunidad(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
-                  />
-                </div>
+                {/* SELECTOR INTELIGENTE DE CENTRO COMUNAL */}
+                <SearchableComunidadSelect
+                  value={regComunidad}
+                  onChange={(val) => setRegComunidad(val)}
+                  required={true}
+                />
 
                 <div>
                   <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Fecha de Nacimiento
+                    Fecha de Nacimiento <span className="text-red-400">*</span>
                     <span className="ml-2 text-sky-400/80 font-normal">(Debe tener entre 15 y 18 años)</span>
                   </label>
                   <input

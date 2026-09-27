@@ -7,6 +7,7 @@ import {
   Search, MapPin, Phone, X, Server
 } from 'lucide-react';
 import CloudpanelGuideModal from '@/components/CloudpanelGuideModal';
+import SearchableComunidadSelect from '@/components/SearchableComunidadSelect';
 
 interface Integrante {
   id: string;
@@ -47,7 +48,7 @@ export default function DashboardPage() {
   const [addError, setAddError] = useState('');
   const [isNotFoundInPadron, setIsNotFoundInPadron] = useState(false);
 
-  // Estados para Registro Manual (Igual al formulario de registro)
+  // Estados para Registro Manual
   const [manualNombre, setManualNombre] = useState('');
   const [manualApellido, setManualApellido] = useState('');
   const [manualCedula, setManualCedula] = useState('');
@@ -115,7 +116,6 @@ export default function DashboardPage() {
 
       if (!res.ok || !data.success) {
         setAddError(data.message || 'La cédula no es válida o no está disponible.');
-        // Detectar si no aparece en el padrón para ofrecer el registro
         if (data.message && data.message.toLowerCase().includes('no aparece en el padrón')) {
           setIsNotFoundInPadron(true);
         }
@@ -131,6 +131,12 @@ export default function DashboardPage() {
 
   const handleConfirmAddMember = async () => {
     if (!foundPerson) return;
+
+    if (!inputTelefono.trim()) {
+      setAddError('El número de teléfono es obligatorio.');
+      return;
+    }
+
     setVerifyingCedula(true);
     setAddError('');
 
@@ -140,7 +146,7 @@ export default function DashboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           cedula: foundPerson.cedula,
-          telefono: inputTelefono
+          telefono: inputTelefono.trim()
         })
       });
       const data = await res.json();
@@ -159,7 +165,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Abrir modal de Registro Manual prellenando la cédula y comunidad
   const openManualRegisterFromSearch = () => {
     setManualCedula(searchCedula.trim());
     setManualComunidad(jefe?.comunidad || '');
@@ -172,11 +177,16 @@ export default function DashboardPage() {
     setIsManualRegisterOpen(true);
   };
 
-  // Enviar formulario manual para agregar el integrante
   const handleManualRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setManualLoading(true);
     setManualError('');
+
+    if (!manualNombre.trim() || !manualApellido.trim() || !manualCedula.trim() || !manualTelefono.trim() || !manualComunidad.trim() || !manualFechaNac) {
+      setManualError('Todos los campos son estrictamente obligatorios.');
+      setManualLoading(false);
+      return;
+    }
 
     try {
       const fullName = `${manualNombre.trim()} ${manualApellido.trim()}`.toUpperCase();
@@ -224,13 +234,18 @@ export default function DashboardPage() {
   const handleSaveEdit = async () => {
     if (!selectedMember) return;
 
+    if (!editTelefono.trim()) {
+      showToast('El teléfono no puede estar vacío.', 'error');
+      return;
+    }
+
     try {
       const res = await fetch('/api/patrulla/integrantes', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: selectedMember.id,
-          telefono: editTelefono
+          telefono: editTelefono.trim()
         })
       });
       const data = await res.json();
@@ -286,7 +301,6 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-[#080d1a] text-slate-100 pb-16">
       
-      {/* Toast Notificación */}
       {toast && (
         <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 border transition-all ${
           toast.type === 'success' ? 'bg-emerald-950/90 border-emerald-800 text-emerald-200' : 'bg-red-950/90 border-red-800 text-red-200'
@@ -489,7 +503,7 @@ export default function DashboardPage() {
 
       </main>
 
-      {/* MODAL 1: INGRESAR INTEGRANTE (BÚSQUEDA EN PADRÓN) */}
+      {/* MODAL 1: BÚSQUEDA EN PADRÓN */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="glass-panel w-full max-w-md rounded-2xl p-6 border border-slate-800 shadow-2xl relative">
@@ -510,7 +524,6 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Mensaje de Error con ENLACE si no aparece en el padrón */}
             {addError && (
               <div className="mb-4 p-3.5 rounded-xl bg-red-950/70 border border-red-800 text-red-200 text-xs flex flex-col gap-2">
                 <div className="flex items-start gap-2">
@@ -587,13 +600,16 @@ export default function DashboardPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Teléfono de Contacto (Opcional)</label>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                    Teléfono de Contacto <span className="text-red-400">*</span>
+                  </label>
                   <input
-                    type="text"
+                    type="tel"
+                    required
                     placeholder="Ej: 0414-1234567"
                     value={inputTelefono}
                     onChange={(e) => setInputTelefono(e.target.value)}
-                    className="w-full px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm"
+                    className="w-full px-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:ring-2 focus:ring-sky-500"
                   />
                 </div>
 
@@ -620,7 +636,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* MODAL NUEVO: REGISTRO MANUAL DEL INTEGRANTE (IGUAL AL FORMULARIO DE REGISTRO) */}
+      {/* MODAL 2: REGISTRO MANUAL DEL INTEGRANTE */}
       {isManualRegisterOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <div className="glass-panel w-full max-w-lg rounded-2xl p-6 border border-slate-800 shadow-2xl relative max-h-[90vh] overflow-y-auto">
@@ -638,7 +654,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <h3 className="text-base font-bold text-white">Registro de Integrante 1x10</h3>
-                <p className="text-xs text-slate-400">Ingreso de integrante no encontrado en el padrón</p>
+                <p className="text-xs text-slate-400">Todos los campos son obligatorios</p>
               </div>
             </div>
 
@@ -652,7 +668,9 @@ export default function DashboardPage() {
             <form onSubmit={handleManualRegisterSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Nombre</label>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                    Nombre <span className="text-red-400">*</span>
+                  </label>
                   <input
                     type="text"
                     required
@@ -664,7 +682,9 @@ export default function DashboardPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Apellido</label>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                    Apellido <span className="text-red-400">*</span>
+                  </label>
                   <input
                     type="text"
                     required
@@ -678,7 +698,9 @@ export default function DashboardPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Cédula de Identidad</label>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                    Cédula de Identidad <span className="text-red-400">*</span>
+                  </label>
                   <input
                     type="text"
                     required
@@ -690,9 +712,12 @@ export default function DashboardPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Número Telefónico</label>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                    Número Telefónico <span className="text-red-400">*</span>
+                  </label>
                   <input
                     type="tel"
+                    required
                     placeholder="Ej: 0414-1234567"
                     value={manualTelefono}
                     onChange={(e) => setManualTelefono(e.target.value)}
@@ -701,19 +726,17 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Centro Comunal / Comunidad</label>
-                <input
-                  type="text"
-                  placeholder="Ej: Comuna El Sueño de Chávez"
-                  value={manualComunidad}
-                  onChange={(e) => setManualComunidad(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
-                />
-              </div>
+              {/* SELECTOR INTELIGENTE DE CENTRO COMUNAL */}
+              <SearchableComunidadSelect
+                value={manualComunidad}
+                onChange={(val) => setManualComunidad(val)}
+                required={true}
+              />
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Fecha de Nacimiento</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Fecha de Nacimiento <span className="text-red-400">*</span>
+                </label>
                 <input
                   type="date"
                   required
@@ -769,12 +792,15 @@ export default function DashboardPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">Teléfono de Contacto</label>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Teléfono de Contacto <span className="text-red-400">*</span>
+                </label>
                 <input
-                  type="text"
+                  type="tel"
+                  required
                   value={editTelefono}
                   onChange={(e) => setEditTelefono(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm"
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:ring-2 focus:ring-sky-500"
                 />
               </div>
 

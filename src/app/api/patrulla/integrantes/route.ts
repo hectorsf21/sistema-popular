@@ -24,7 +24,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: 'La cédula es requerida.' }, { status: 400 });
     }
 
-    // Normalizar formato de la cédula (ej: V-12345678)
+    // El teléfono siempre es obligatorio
+    if (!telefono || !telefono.trim()) {
+      return NextResponse.json({ success: false, message: 'El número de teléfono es obligatorio.' }, { status: 400 });
+    }
+
     const norm = cedula.trim().toUpperCase().replace(/[\.\s\-]/g, '');
     const cleanCedula = norm.startsWith('V') ? `V-${norm.slice(1)}` : (norm.startsWith('E') ? `E-${norm.slice(1)}` : `V-${norm}`);
 
@@ -37,7 +41,7 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // 2. Validar regla de no duplicidad en la base de datos
+    // 2. Validar regla de no duplicidad
     const dbCheck = await checkPersonExistsInDB(cleanCedula);
     if (dbCheck.exists) {
       return NextResponse.json({
@@ -50,24 +54,25 @@ export async function POST(request: Request) {
       cedula: cleanCedula,
       nombre: '',
       fechaNacimiento: '',
-      comunidad: comunidad || session.comunidad || 'Comunidad General',
-      telefono: telefono || null,
+      comunidad: (comunidad && comunidad.trim()) || session.comunidad || 'Comunidad General',
+      telefono: telefono.trim(),
       responsabilidad: responsabilidad || 'Patrullado'
     };
 
-    // 3. Caso Registro Manual (cuando no aparece en el padrón)
+    // 3. Caso Registro Manual
     if (isManual) {
-      if (!nombre || !fechaNacimiento) {
+      if (!nombre || !fechaNacimiento || !comunidad) {
         return NextResponse.json({
           success: false,
-          message: 'El nombre completo y la fecha de nacimiento son obligatorios.'
+          message: 'Todos los campos son obligatorios (nombre, fecha de nacimiento y circuito comunal).'
         }, { status: 400 });
       }
 
       memberData.nombre = nombre.trim().toUpperCase();
       memberData.fechaNacimiento = fechaNacimiento;
+      memberData.comunidad = comunidad.trim();
     } else {
-      // 4. Caso Búsqueda en Padrón (validado con SQLite/Python)
+      // 4. Caso Búsqueda en Padrón
       const excelCheck = await verifyPersonInExcel(cleanCedula);
       if (!excelCheck.success || !excelCheck.data) {
         return NextResponse.json({
@@ -82,7 +87,7 @@ export async function POST(request: Request) {
       memberData.comunidad = person.comunidad || memberData.comunidad;
     }
 
-    // 5. Guardar en BD / Store
+    // 5. Guardar en BD
     const newMember = await addIntegrante({
       jefeId: session.id,
       cedula: memberData.cedula,
@@ -118,8 +123,12 @@ export async function PUT(request: Request) {
       return NextResponse.json({ success: false, message: 'El ID del integrante es requerido.' }, { status: 400 });
     }
 
+    if (!telefono || !telefono.trim()) {
+      return NextResponse.json({ success: false, message: 'El número de teléfono es obligatorio.' }, { status: 400 });
+    }
+
     const updated = await updateIntegrante(id, {
-      telefono,
+      telefono: telefono.trim(),
       responsabilidad,
       comunidad
     });
