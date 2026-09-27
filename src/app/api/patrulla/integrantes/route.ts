@@ -9,7 +9,7 @@ import {
 } from '@/lib/store';
 import { verifyPersonInExcel } from '@/lib/python';
 
-// POST: Agregar nuevo integrante al 1x10
+// POST: Agregar nuevo integrante al 1x10 (Padrón o Registro Manual)
 export async function POST(request: Request) {
   try {
     const session = await getSession();
@@ -17,11 +17,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, message: 'No autorizado.' }, { status: 401 });
     }
 
-    const { cedula, telefono, responsabilidad } = await request.json();
+    const body = await request.json();
+    const { cedula, telefono, responsabilidad, isManual, nombre, fechaNacimiento, comunidad } = body;
 
     if (!cedula) {
       return NextResponse.json({ success: false, message: 'La cédula es requerida.' }, { status: 400 });
     }
+
+    // Normalizar formato de la cédula (ej: V-12345678)
+    const norm = cedula.trim().toUpperCase().replace(/[\.\s\-]/g, '');
+    const cleanCedula = norm.startsWith('V') ? `V-${norm.slice(1)}` : (norm.startsWith('E') ? `E-${norm.slice(1)}` : `V-${norm}`);
 
     // 1. Validar límite de 10 integrantes
     const jefe = await getJefeWithIntegrantes(session.cedula);
@@ -32,40 +37,65 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // 2. Validar regla de exclusividad / no duplicidad (Jefe o Integrante en cualquier patrulla)
-    const dbCheck = await checkPersonExistsInDB(cedula);
+    // 2. Validar regla de no duplicidad en la base de datos
+    const dbCheck = await checkPersonExistsInDB(cleanCedula);
     if (dbCheck.exists) {
       return NextResponse.json({
         success: false,
-        message: dbCheck.detail || `La persona con cédula ${cedula} ya se encuentra registrada en el sistema y no puede ser agregada a otra lista.`
+        message: dbCheck.detail || `La persona con cédula ${cleanCedula} ya se encuentra registrada en otra patrulla.`
       }, { status: 409 });
     }
 
-    // 3. Validar con Python contra Excel
-    const excelCheck = await verifyPersonInExcel(cedula);
-    if (!excelCheck.success || !excelCheck.data) {
-      return NextResponse.json({
-        success: false,
-        message: excelCheck.message || 'La cédula no aparece en el padrón electoral.'
-      }, { status: 400 });
+    let memberData = {
+      cedula: cleanCedula,
+      nombre: '',
+      fechaNacimiento: '',
+      comunidad: comunidad || session.comunidad || 'Comunidad General',
+      telefono: telefono || null,
+      responsabilidad: responsabilidad || 'Patrullado'
+    };
+
+    // 3. Caso Registro Manual (cuando no aparece en el padrón)
+    if (isManual) {
+      if (!nombre || !fechaNacimiento) {
+        return NextResponse.json({
+          success: false,
+          message: 'El nombre completo y la fecha de nacimiento son obligatorios.'
+        }, { status: 400 });
+      }
+
+      memberData.nombre = nombre.trim().toUpperCase();
+      memberData.fechaNacimiento = fechaNacimiento;
+    } else {
+      // 4. Caso Búsqueda en Padrón (validado con SQLite/Python)
+      const excelCheck = await verifyPersonInExcel(cleanCedula);
+      if (!excelCheck.success || !excelCheck.data) {
+        return NextResponse.json({
+          success: false,
+          message: excelCheck.message || 'La cédula no aparece en el padrón electoral.'
+        }, { status: 400 });
+      }
+
+      const person = excelCheck.data;
+      memberData.nombre = person.nombre;
+      memberData.fechaNacimiento = person.fechaNacimiento;
+      memberData.comunidad = person.comunidad || memberData.comunidad;
     }
 
-    const person = excelCheck.data;
-
-    // 4. Guardar en BD / Store
+    // 5. Guardar en BD / Store
     const newMember = await addIntegrante({
       jefeId: session.id,
-      cedula: person.cedula,
-      nombre: person.nombre,
-      fechaNacimiento: person.fechaNacimiento,
-      telefono: telefono || null,
-      comunidad: person.comunidad,
-      responsabilidad: responsabilidad || 'Patrullado'
+      cedula: memberData.cedula,
+      nombre: memberData.nombre,
+      fechaNacimiento: memberData.fechaNacimiento,
+      telefono: memberData.telefono,
+      comunidad: memberData.comunidad,
+      responsabilidad: memberData.responsabilidad
     });
 
     return NextResponse.json({
       success: true,
-      message: `${person.nombre} ha sido agregado(a) a su patrulla 1x10.`,
+      message: `${memberData.nombre} ha sido agregado(a) a su patrulla 1x10 exitosamente.`,
       integrante: newMember
     });
 

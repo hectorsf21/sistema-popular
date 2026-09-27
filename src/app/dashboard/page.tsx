@@ -34,16 +34,28 @@ export default function DashboardPage() {
 
   // Modales
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isManualRegisterOpen, setIsManualRegisterOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
 
-  // Estados de Agregar Integrante
+  // Estados de Agregar Integrante por Búsqueda
   const [searchCedula, setSearchCedula] = useState('');
   const [verifyingCedula, setVerifyingCedula] = useState(false);
   const [foundPerson, setFoundPerson] = useState<any | null>(null);
   const [inputTelefono, setInputTelefono] = useState('');
   const [addError, setAddError] = useState('');
+  const [isNotFoundInPadron, setIsNotFoundInPadron] = useState(false);
+
+  // Estados para Registro Manual (Igual al formulario de registro)
+  const [manualNombre, setManualNombre] = useState('');
+  const [manualApellido, setManualApellido] = useState('');
+  const [manualCedula, setManualCedula] = useState('');
+  const [manualTelefono, setManualTelefono] = useState('');
+  const [manualComunidad, setManualComunidad] = useState('');
+  const [manualFechaNac, setManualFechaNac] = useState('');
+  const [manualLoading, setManualLoading] = useState(false);
+  const [manualError, setManualError] = useState('');
 
   // Estados de Editar / Eliminar
   const [selectedMember, setSelectedMember] = useState<Integrante | null>(null);
@@ -90,6 +102,7 @@ export default function DashboardPage() {
 
     setVerifyingCedula(true);
     setAddError('');
+    setIsNotFoundInPadron(false);
     setFoundPerson(null);
 
     try {
@@ -102,6 +115,10 @@ export default function DashboardPage() {
 
       if (!res.ok || !data.success) {
         setAddError(data.message || 'La cédula no es válida o no está disponible.');
+        // Detectar si no aparece en el padrón para ofrecer el registro
+        if (data.message && data.message.toLowerCase().includes('no aparece en el padrón')) {
+          setIsNotFoundInPadron(true);
+        }
       } else {
         setFoundPerson(data.person);
       }
@@ -142,12 +159,66 @@ export default function DashboardPage() {
     }
   };
 
+  // Abrir modal de Registro Manual prellenando la cédula y comunidad
+  const openManualRegisterFromSearch = () => {
+    setManualCedula(searchCedula.trim());
+    setManualComunidad(jefe?.comunidad || '');
+    setManualNombre('');
+    setManualApellido('');
+    setManualTelefono('');
+    setManualFechaNac('');
+    setManualError('');
+    setIsAddModalOpen(false);
+    setIsManualRegisterOpen(true);
+  };
+
+  // Enviar formulario manual para agregar el integrante
+  const handleManualRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setManualLoading(true);
+    setManualError('');
+
+    try {
+      const fullName = `${manualNombre.trim()} ${manualApellido.trim()}`.toUpperCase();
+      const res = await fetch('/api/patrulla/integrantes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cedula: manualCedula.trim(),
+          nombre: fullName,
+          fechaNacimiento: manualFechaNac,
+          telefono: manualTelefono.trim(),
+          comunidad: manualComunidad.trim(),
+          isManual: true
+        })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        setManualError(data.message || 'Error al registrar el integrante.');
+        setManualLoading(false);
+        return;
+      }
+
+      showToast(data.message || 'Integrante agregado exitosamente.');
+      setIsManualRegisterOpen(false);
+      closeAddModal();
+      fetchPatrulla();
+    } catch (err) {
+      setManualError('Error de conexión con el servidor.');
+    } finally {
+      setManualLoading(false);
+    }
+  };
+
   const closeAddModal = () => {
     setIsAddModalOpen(false);
     setSearchCedula('');
     setFoundPerson(null);
     setInputTelefono('');
     setAddError('');
+    setIsNotFoundInPadron(false);
   };
 
   const handleSaveEdit = async () => {
@@ -225,11 +296,10 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* HEADER SUPERIOR CON DOS LOGOS (Izquierda 245x111, Derecha 181x151) */}
+      {/* HEADER SUPERIOR */}
       <header className="sticky top-0 z-30 bg-[#0b1326]/90 backdrop-blur-md border-b border-slate-800/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-between gap-4">
           
-          {/* LOGO IZQUIERDO SUPERIOR (245px ancho x 111px alto) */}
           <div className="flex items-center gap-3 shrink-0">
             <img
               src="/izquierda.jpg"
@@ -240,13 +310,11 @@ export default function DashboardPage() {
             />
           </div>
 
-          {/* Título Central */}
           <div className="hidden lg:block text-center">
             <h1 className="font-extrabold text-white text-lg tracking-tight">1X10 COMUNAL GUARICO</h1>
             <p className="text-xs text-slate-400">Panel del Jefe de Patrulla</p>
           </div>
 
-          {/* LOGO DERECHO SUPERIOR (181px ancho x 151px alto) & Botones */}
           <div className="flex items-center gap-4 shrink-0">
             <button
               onClick={() => setIsGuideOpen(true)}
@@ -421,7 +489,7 @@ export default function DashboardPage() {
 
       </main>
 
-      {/* MODAL 1: INGRESAR INTEGRANTE */}
+      {/* MODAL 1: INGRESAR INTEGRANTE (BÚSQUEDA EN PADRÓN) */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="glass-panel w-full max-w-md rounded-2xl p-6 border border-slate-800 shadow-2xl relative">
@@ -442,10 +510,25 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            {/* Mensaje de Error con ENLACE si no aparece en el padrón */}
             {addError && (
-              <div className="mb-4 p-3 rounded-xl bg-red-950/70 border border-red-800 text-red-200 text-xs flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                <span>{addError}</span>
+              <div className="mb-4 p-3.5 rounded-xl bg-red-950/70 border border-red-800 text-red-200 text-xs flex flex-col gap-2">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                  <span>{addError}</span>
+                </div>
+                {isNotFoundInPadron && (
+                  <div className="pl-6 pt-1 border-t border-red-900/60">
+                    <span className="text-slate-300">¿Deseas agregarlo? </span>
+                    <button
+                      type="button"
+                      onClick={openManualRegisterFromSearch}
+                      className="text-sky-400 hover:text-sky-300 font-bold underline transition-colors"
+                    >
+                      Regístralo aquí
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -459,9 +542,13 @@ export default function DashboardPage() {
                     <input
                       type="text"
                       required
-                      placeholder="Ej: V-14893609"
+                      placeholder="Ej: 30543298 o V-30543298"
                       value={searchCedula}
-                      onChange={(e) => setSearchCedula(e.target.value)}
+                      onChange={(e) => {
+                        setSearchCedula(e.target.value);
+                        setAddError('');
+                        setIsNotFoundInPadron(false);
+                      }}
                       className="w-full pl-4 pr-10 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm focus:ring-2 focus:ring-sky-500"
                     />
                     <Search className="absolute right-3.5 top-3 w-4 h-4 text-slate-400" />
@@ -481,7 +568,7 @@ export default function DashboardPage() {
                     disabled={verifyingCedula}
                     className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold flex items-center gap-2 shadow-lg shadow-sky-600/20"
                   >
-                    {verifyingCedula ? 'Verificando en Padrón...' : 'Buscar en Padrón'}
+                    {verifyingCedula ? 'Buscando en Padrón...' : 'Buscar en Padrón'}
                   </button>
                 </div>
               </form>
@@ -533,7 +620,140 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* MODAL 2: EDITAR INTEGRANTE */}
+      {/* MODAL NUEVO: REGISTRO MANUAL DEL INTEGRANTE (IGUAL AL FORMULARIO DE REGISTRO) */}
+      {isManualRegisterOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="glass-panel w-full max-w-lg rounded-2xl p-6 border border-slate-800 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            
+            <button
+              onClick={() => setIsManualRegisterOpen(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-xl bg-sky-950 border border-sky-800 text-sky-400 flex items-center justify-center">
+                <UserPlus className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">Registro de Integrante 1x10</h3>
+                <p className="text-xs text-slate-400">Ingreso de integrante no encontrado en el padrón</p>
+              </div>
+            </div>
+
+            {manualError && (
+              <div className="mb-4 p-3.5 rounded-xl bg-red-950/70 border border-red-800/60 text-red-200 text-xs flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <span>{manualError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleManualRegisterSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Nombre</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej: Juan"
+                    value={manualNombre}
+                    onChange={(e) => setManualNombre(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Apellido</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej: Pérez"
+                    value={manualApellido}
+                    onChange={(e) => setManualApellido(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Cédula de Identidad</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ej: V-12345678"
+                    value={manualCedula}
+                    onChange={(e) => setManualCedula(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Número Telefónico</label>
+                  <input
+                    type="tel"
+                    placeholder="Ej: 0414-1234567"
+                    value={manualTelefono}
+                    onChange={(e) => setManualTelefono(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Centro Comunal / Comunidad</label>
+                <input
+                  type="text"
+                  placeholder="Ej: Comuna El Sueño de Chávez"
+                  value={manualComunidad}
+                  onChange={(e) => setManualComunidad(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">Fecha de Nacimiento</label>
+                <input
+                  type="date"
+                  required
+                  value={manualFechaNac}
+                  onChange={(e) => setManualFechaNac(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:ring-2 focus:ring-sky-500"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsManualRegisterOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold"
+                  disabled={manualLoading}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={manualLoading}
+                  className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shadow-lg shadow-sky-600/20 flex items-center gap-2 disabled:opacity-60"
+                >
+                  {manualLoading ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Registrando...</span>
+                    </>
+                  ) : (
+                    <span>Registrar e Integrar</span>
+                  )}
+                </button>
+              </div>
+            </form>
+
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: EDITAR INTEGRANTE */}
       {isEditModalOpen && selectedMember && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="glass-panel w-full max-w-md rounded-2xl p-6 border border-slate-800 shadow-2xl relative">
@@ -579,7 +799,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* MODAL 3: ELIMINAR INTEGRANTE */}
+      {/* MODAL 4: ELIMINAR INTEGRANTE */}
       {isDeleteModalOpen && selectedMember && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
           <div className="glass-panel w-full max-w-sm rounded-2xl p-6 border border-slate-800 shadow-2xl text-center">
