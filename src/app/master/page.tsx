@@ -253,7 +253,7 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
           {/* LOGO IZQUIERDO SUPERIOR (245px ancho x 111px alto) */}
           <div className="flex items-center gap-3 shrink-0">
             <img
-              src="/izquierda.jpg"
+              src="/izquierda.png"
               onError={(e) => { (e.target as HTMLImageElement).src = '/izquierda.svg'; }}
               alt="Logo Izquierdo"
               style={{ width: '245px', height: '111px' }}
