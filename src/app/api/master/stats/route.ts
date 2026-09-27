@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { getAllJefesWithStats } from '@/lib/store';
 
+// Meta fija global establecida: 572.000 personas organizadas
+const META_GLOBAL_OBJETIVO = 572000;
+
 export async function GET() {
   try {
     const session = await getSession();
@@ -13,8 +16,11 @@ export async function GET() {
 
     const totalJefes = jefes.length;
     const totalIntegrantes = jefes.reduce((acc, j) => acc + j.totalIntegrantes, 0);
+    const totalGeneral = totalJefes + totalIntegrantes; // Jefes + Integrantes
     const jefesCompletos = jefes.filter(j => j.isCompleted).length;
-    const metaMetaPorcentaje = totalJefes > 0 ? Math.round((totalIntegrantes / (totalJefes * 10)) * 100) : 0;
+
+    // Cálculo real sobre la meta global de 572.000 (con 2 decimales para ver el avance)
+    const metaMetaPorcentaje = Number(((totalGeneral / META_GLOBAL_OBJETIVO) * 100).toFixed(2));
 
     // Conteo por comunidades
     const comunidadesMap: Record<string, number> = {};
@@ -27,9 +33,10 @@ export async function GET() {
       stats: {
         totalJefes,
         totalIntegrantes,
-        totalGeneral: totalJefes + totalIntegrantes,
+        totalGeneral,
         jefesCompletos,
         metaPorcentaje: metaMetaPorcentaje,
+        metaObjetivo: META_GLOBAL_OBJETIVO,
         comunidadesCount: Object.keys(comunidadesMap).length
       },
       jefes

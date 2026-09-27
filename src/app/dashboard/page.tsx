@@ -7,7 +7,7 @@ import {
   Search, MapPin, Phone, X, Server
 } from 'lucide-react';
 import CloudpanelGuideModal from '@/components/CloudpanelGuideModal';
-import SearchableComunidadSelect from '@/components/SearchableComunidadSelect';
+import FormLocationCascade from '@/components/FormLocationCascade';
 
 interface Integrante {
   id: string;
@@ -40,7 +40,7 @@ export default function DashboardPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
 
-  // Estados de Agregar Integrante por Búsqueda
+  // Búsqueda en Padrón
   const [searchCedula, setSearchCedula] = useState('');
   const [verifyingCedula, setVerifyingCedula] = useState(false);
   const [foundPerson, setFoundPerson] = useState<any | null>(null);
@@ -48,17 +48,19 @@ export default function DashboardPage() {
   const [addError, setAddError] = useState('');
   const [isNotFoundInPadron, setIsNotFoundInPadron] = useState(false);
 
-  // Estados para Registro Manual
+  // Registro Manual con Cascada
   const [manualNombre, setManualNombre] = useState('');
   const [manualApellido, setManualApellido] = useState('');
   const [manualCedula, setManualCedula] = useState('');
   const [manualTelefono, setManualTelefono] = useState('');
+  const [manualMunicipio, setManualMunicipio] = useState('');
+  const [manualParroquia, setManualParroquia] = useState('');
   const [manualComunidad, setManualComunidad] = useState('');
   const [manualFechaNac, setManualFechaNac] = useState('');
   const [manualLoading, setManualLoading] = useState(false);
   const [manualError, setManualError] = useState('');
 
-  // Estados de Editar / Eliminar
+  // Editar / Eliminar
   const [selectedMember, setSelectedMember] = useState<Integrante | null>(null);
   const [editTelefono, setEditTelefono] = useState('');
 
@@ -167,10 +169,12 @@ export default function DashboardPage() {
 
   const openManualRegisterFromSearch = () => {
     setManualCedula(searchCedula.trim());
-    setManualComunidad(jefe?.comunidad || '');
     setManualNombre('');
     setManualApellido('');
     setManualTelefono('');
+    setManualMunicipio('');
+    setManualParroquia('');
+    setManualComunidad('');
     setManualFechaNac('');
     setManualError('');
     setIsAddModalOpen(false);
@@ -183,7 +187,7 @@ export default function DashboardPage() {
     setManualError('');
 
     if (!manualNombre.trim() || !manualApellido.trim() || !manualCedula.trim() || !manualTelefono.trim() || !manualComunidad.trim() || !manualFechaNac) {
-      setManualError('Todos los campos son estrictamente obligatorios.');
+      setManualError('Todos los campos son estrictamente obligatorios (incluyendo ubicación).');
       setManualLoading(false);
       return;
     }
@@ -310,7 +314,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* HEADER SUPERIOR */}
       <header className="sticky top-0 z-30 bg-[#0b1326]/90 backdrop-blur-md border-b border-slate-800/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-between gap-4">
           
@@ -358,10 +361,8 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      {/* Contenido Principal */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-6">
 
-        {/* Tarjeta de Información del Jefe y Progreso */}
         <div className="glass-panel rounded-2xl p-6 sm:p-8 border border-slate-800/80 shadow-xl relative overflow-hidden">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
@@ -380,7 +381,6 @@ export default function DashboardPage() {
               </p>
             </div>
 
-            {/* Contador de Meta 1x10 */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-[#070e1e] p-4 rounded-xl border border-slate-800">
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between gap-6 text-xs text-slate-400 font-semibold">
@@ -413,7 +413,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Listado de Integrantes (10 Cupos) */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-bold text-white flex items-center gap-2">
@@ -636,7 +635,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* MODAL 2: REGISTRO MANUAL DEL INTEGRANTE */}
+      {/* MODAL 2: REGISTRO MANUAL CON CASCADA */}
       {isManualRegisterOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <div className="glass-panel w-full max-w-lg rounded-2xl p-6 border border-slate-800 shadow-2xl relative max-h-[90vh] overflow-y-auto">
@@ -726,10 +725,14 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* SELECTOR INTELIGENTE DE CENTRO COMUNAL */}
-              <SearchableComunidadSelect
-                value={manualComunidad}
-                onChange={(val) => setManualComunidad(val)}
+              {/* SELECTOR EN CASCADA */}
+              <FormLocationCascade
+                municipio={manualMunicipio}
+                parroquia={manualParroquia}
+                comunidad={manualComunidad}
+                onChangeMunicipio={setManualMunicipio}
+                onChangeParroquia={setManualParroquia}
+                onChangeComunidad={setManualComunidad}
                 required={true}
               />
 

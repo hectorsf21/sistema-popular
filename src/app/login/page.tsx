@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Shield, User, Calendar, Key, CheckCircle2, AlertCircle, Sparkles, UserPlus, X } from 'lucide-react';
-import SearchableComunidadSelect from '@/components/SearchableComunidadSelect';
+import FormLocationCascade from '@/components/FormLocationCascade';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,6 +22,8 @@ export default function LoginPage() {
   const [regApellido, setRegApellido] = useState('');
   const [regCedula, setRegCedula] = useState('');
   const [regTelefono, setRegTelefono] = useState('');
+  const [regMunicipio, setRegMunicipio] = useState('');
+  const [regParroquia, setRegParroquia] = useState('');
   const [regComunidad, setRegComunidad] = useState('');
   const [regFechaNac, setRegFechaNac] = useState('');
   const [regSuccessMsg, setRegSuccessMsg] = useState('');
@@ -70,6 +72,8 @@ export default function LoginPage() {
     setRegApellido('');
     setRegCedula('');
     setRegTelefono('');
+    setRegMunicipio('');
+    setRegParroquia('');
     setRegComunidad('');
     setRegFechaNac('');
     setRegSuccessMsg('');
@@ -82,9 +86,8 @@ export default function LoginPage() {
     setRegErrorMsg('');
     setRegSuccessMsg('');
 
-    // Validación estricta de todos los campos
-    if (!regNombre.trim() || !regApellido.trim() || !regCedula.trim() || !regTelefono.trim() || !regComunidad.trim() || !regFechaNac) {
-      setRegErrorMsg('Todos los campos son obligatorios, incluyendo el teléfono y el circuito comunal.');
+    if (!regNombre.trim() || !regApellido.trim() || !regCedula.trim() || !regTelefono.trim() || !regMunicipio.trim() || !regParroquia.trim() || !regComunidad.trim() || !regFechaNac) {
+      setRegErrorMsg('Todos los campos son obligatorios (incluyendo Municipio, Parroquia y Circuito Comunal).');
       setRegLoading(false);
       return;
     }
@@ -98,6 +101,8 @@ export default function LoginPage() {
           apellido: regApellido.trim(),
           cedula: regCedula.trim(),
           telefono: regTelefono.trim(),
+          municipio: regMunicipio.trim(),
+          parroquia: regParroquia.trim(),
           comunidad: regComunidad.trim(),
           fechaNacimiento: regFechaNac,
         }),
@@ -311,7 +316,7 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* MODAL REGISTRO CON CAMPOS OBLIGATORIOS Y SELECTOR */}
+      {/* MODAL REGISTRO CON CASCADA (MUNICIPIO -> PARROQUIA -> COMUNA) */}
       {isRegisterOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <div className="glass-panel w-full max-w-lg rounded-2xl p-6 border border-slate-800 shadow-2xl relative max-h-[90vh] overflow-y-auto">
@@ -329,7 +334,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <h3 className="text-base font-bold text-white">Registro de Jefe de Patrulla</h3>
-                <p className="text-xs text-slate-400">Todos los campos son obligatorios</p>
+                <p className="text-xs text-slate-400">Todos los campos son estrictamente obligatorios</p>
               </div>
             </div>
 
@@ -408,10 +413,14 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                {/* SELECTOR INTELIGENTE DE CENTRO COMUNAL */}
-                <SearchableComunidadSelect
-                  value={regComunidad}
-                  onChange={(val) => setRegComunidad(val)}
+                {/* SELECTOR EN CASCADA */}
+                <FormLocationCascade
+                  municipio={regMunicipio}
+                  parroquia={regParroquia}
+                  comunidad={regComunidad}
+                  onChangeMunicipio={setRegMunicipio}
+                  onChangeParroquia={setRegParroquia}
+                  onChangeComunidad={setRegComunidad}
                   required={true}
                 />
 

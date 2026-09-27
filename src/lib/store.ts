@@ -54,7 +54,6 @@ export async function getJefeWithIntegrantes(cedula: string): Promise<JefeData |
     console.warn('Prisma DB query fallback to memory:', error);
   }
 
-  // Fallback a memoria
   const memJefe = memoryJefes.get(cedula);
   if (memJefe) return memJefe;
   return null;
@@ -94,32 +93,19 @@ export async function getJefeById(jefeId: string): Promise<JefeData | null> {
 export async function checkIntegranteExists(cedula: string): Promise<{ exists: boolean; jefeNombre?: string }> {
   try {
     const integrante = await prisma.integrante.findUnique({
-      where: { cedula },
-      include: {
-        jefe: {
-          select: { nombre: true, cedula: true }
-        }
-      }
+      where: { cedula }
     });
 
     if (integrante) {
-      return {
-        exists: true,
-        jefeNombre: integrante.jefe?.nombre || 'Otro Jefe de Patrulla'
-      };
+      return { exists: true };
     }
   } catch (error) {
     console.warn('Prisma DB query fallback to memory:', error);
   }
 
-  // Check memory
   for (const i of memoryIntegrantes.values()) {
     if (i.cedula === cedula) {
-      const jefe = Array.from(memoryJefes.values()).find(j => j.id === i.jefeId);
-      return {
-        exists: true,
-        jefeNombre: jefe?.nombre || 'Otro Jefe de Patrulla'
-      };
+      return { exists: true };
     }
   }
 
@@ -129,15 +115,14 @@ export async function checkIntegranteExists(cedula: string): Promise<{ exists: b
 export async function checkPersonExistsInDB(cedulaInput: string): Promise<{
   exists: boolean;
   role?: 'jefe' | 'integrante';
-  jefeNombre?: string;
   detail?: string;
 }> {
   const norm = cedulaInput.trim().toUpperCase().replace(/[\.\s\-]/g, '');
-  const cleanKeyFormatted = norm.startsWith('V') ? `V-${norm.slice(1)}` : `V-${norm}`;
+  const cleanKeyFormatted = norm.startsWith('V') ? `V-${norm.slice(1)}` : (norm.startsWith('E') ? `E-${norm.slice(1)}` : `V-${norm}`);
 
   try {
-    // Permitido: los Jefes de Patrulla SÍ pueden ser parte del 1x10 de otro Jefe.
-    // Solo validamos que la persona no pertenezca ya como integrante a otra patrulla.
+    // Los Jefes SÍ pueden ser parte del 1x10 de otro Jefe.
+    // Solo validamos que no esté duplicado como integrante en otra patrulla.
     const integrante = await prisma.integrante.findFirst({
       where: {
         OR: [
@@ -145,9 +130,6 @@ export async function checkPersonExistsInDB(cedulaInput: string): Promise<{
           { cedula: norm },
           { cedula: cleanKeyFormatted }
         ]
-      },
-      include: {
-        jefe: { select: { nombre: true } }
       }
     });
 
@@ -155,24 +137,21 @@ export async function checkPersonExistsInDB(cedulaInput: string): Promise<{
       return {
         exists: true,
         role: 'integrante',
-        jefeNombre: integrante.jefe?.nombre || 'Otro Jefe de Patrulla',
-        detail: `La persona con cédula ${cedulaInput} ya pertenece a la patrulla 1x10 de "${integrante.jefe?.nombre || 'Otro Jefe de Patrulla'}".`
+        detail: `La persona con cédula ${cedulaInput} ya pertenece a la patrulla 1x10 de otro Jefe de Patrulla.`
       };
     }
   } catch (error) {
     console.warn('Prisma DB query checkPersonExistsInDB fallback to memory:', error);
   }
 
-  // Check memory (solo integrantes)
+  // Check memory
   for (const i of memoryIntegrantes.values()) {
     const iNorm = i.cedula.toUpperCase().replace(/[\.\s\-]/g, '');
     if (iNorm === norm || i.cedula === cleanKeyFormatted || i.cedula === cedulaInput) {
-      const jefe = Array.from(memoryJefes.values()).find(j => j.id === i.jefeId);
       return {
         exists: true,
         role: 'integrante',
-        jefeNombre: jefe?.nombre || 'Otro Jefe de Patrulla',
-        detail: `La persona con cédula ${cedulaInput} ya pertenece a la patrulla 1x10 de "${jefe?.nombre || 'Otro Jefe de Patrulla'}".`
+        detail: `La persona con cédula ${cedulaInput} ya pertenece a la patrulla 1x10 de otro Jefe de Patrulla.`
       };
     }
   }
@@ -210,7 +189,6 @@ export async function addIntegrante(data: {
     console.warn('Prisma DB create fallback to memory:', error);
   }
 
-  // Fallback a memoria
   const newInt: IntegranteData = {
     id: `int-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
     jefeId: data.jefeId,
