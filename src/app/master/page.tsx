@@ -7,6 +7,7 @@ import {
   BarChart3, MapPin, X, UserCheck, Layers, Printer, FileDown
 } from 'lucide-react';
 import CascadingLocationSelect from '@/components/CascadingLocationSelect';
+import BalanceElectoralModal from '@/components/BalanceElectoralModal';
 
 interface IntegranteItem {
   id: string;
@@ -58,6 +59,7 @@ export default function MasterPage() {
   // Modales
   const [selectedJefeModal, setSelectedJefeModal] = useState<any | null>(null);
   const [loadingJefeDetails, setLoadingJefeDetails] = useState(false);
+  const [isBalanceOpen, setIsBalanceOpen] = useState(false);
 
   const fetchMasterStats = async () => {
     try {
@@ -90,7 +92,7 @@ export default function MasterPage() {
     totalGeneral: jefes.length + jefes.reduce((acc, j) => acc + j.totalIntegrantes, 0),
     jefesCompletos: jefes.filter(j => j.isCompleted).length,
     metaPorcentaje: 0.00,
-    metaObjetivo: 572000,
+    metaObjetivo: 572067,
     comunidadesCount: new Set(jefes.map(j => j.comunidad)).size
   };
 
@@ -158,7 +160,6 @@ ${(selectedJefeModal.integrantes || []).map((m: any, i: number) =>
     URL.revokeObjectURL(url);
   };
 
-  // Filtro con búsqueda cruzada (busca por Jefe O por Integrante)
   const filteredJefes = jefes.filter(j => {
     if (selectedMunicipio && j.municipio && j.municipio.toLowerCase() !== selectedMunicipio.toLowerCase()) return false;
     if (selectedParroquia && j.parroquia && j.parroquia.toLowerCase() !== selectedParroquia.toLowerCase()) return false;
@@ -217,10 +218,21 @@ ${(selectedJefeModal.integrantes || []).map((m: any, i: number) =>
             <p className="text-xs text-slate-400">Supervisión Territorial 1x10</p>
           </div>
 
-          <div className="flex items-center gap-4 shrink-0">
+          <div className="flex items-center gap-3 shrink-0">
+            {/* BOTÓN BALANCE TERRITORIAL */}
+            <button
+              onClick={() => setIsBalanceOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-950/70 hover:bg-red-900/80 text-red-200 border border-red-800 text-xs font-semibold transition-all shadow-sm"
+              title="Ver tabla comparativa oficial por municipio"
+            >
+              <BarChart3 className="w-4 h-4 text-red-400" />
+              <span>Balance Territorial</span>
+            </button>
+
+            {/* BOTÓN SALIR */}
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-semibold transition-colors"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-semibold transition-colors"
             >
               <LogOut className="w-3.5 h-3.5 text-slate-400" />
               <span>Salir</span>
@@ -279,7 +291,6 @@ ${(selectedJefeModal.integrantes || []).map((m: any, i: number) =>
           <div className="glass-panel p-5 rounded-2xl border border-slate-800 flex items-center justify-between">
             <div>
               <p className="text-xs text-slate-400 font-semibold uppercase">Meta Global (572k)</p>
-              {/* PORCENTAJE CON DOS DECIMALES EXACTOS */}
               <h3 className="text-3xl font-extrabold text-emerald-400 mt-1">
                 {Number(currentStats.metaPorcentaje || 0).toFixed(2)}%
               </h3>
@@ -531,7 +542,14 @@ ${(selectedJefeModal.integrantes || []).map((m: any, i: number) =>
         </div>
       )}
 
-      {/* REPORTE IMPRESO OFICIAL (IDÉNTICO A LA MUESTRA) */}
+      {/* MODAL DE BALANCE ELECTORAL POR MUNICIPIO */}
+      <BalanceElectoralModal
+        isOpen={isBalanceOpen}
+        onClose={() => setIsBalanceOpen(false)}
+        jefes={jefes}
+      />
+
+      {/* REPORTE IMPRESO OFICIAL */}
       {selectedJefeModal && (
         <div className="printable-report hidden print:block">
           <style dangerouslySetInnerHTML={{ __html: `

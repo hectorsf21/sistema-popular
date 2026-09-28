@@ -4,9 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Users, UserPlus, LogOut, CheckCircle2, AlertCircle, Trash2, Edit3,
-  Search, MapPin, Phone, X, Server
+  Search, MapPin, Phone, X, Printer
 } from 'lucide-react';
-//import CloudpanelGuideModal from '@/components/CloudpanelGuideModal';
 import FormLocationCascade from '@/components/FormLocationCascade';
 
 interface Integrante {
@@ -16,6 +15,8 @@ interface Integrante {
   nombre: string;
   fechaNacimiento: string;
   telefono?: string;
+  municipio?: string;
+  parroquia?: string;
   comunidad?: string;
   createdAt: string;
 }
@@ -24,6 +25,8 @@ interface JefeProfile {
   id: string;
   cedula: string;
   nombre: string;
+  municipio?: string;
+  parroquia?: string;
   comunidad: string;
   integrantes: Integrante[];
 }
@@ -38,7 +41,6 @@ export default function DashboardPage() {
   const [isManualRegisterOpen, setIsManualRegisterOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   // Búsqueda en Padrón
   const [searchCedula, setSearchCedula] = useState('');
@@ -97,6 +99,10 @@ export default function DashboardPage() {
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     router.push('/login');
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   const handleVerifyCedula = async (e: React.FormEvent) => {
@@ -172,9 +178,9 @@ export default function DashboardPage() {
     setManualNombre('');
     setManualApellido('');
     setManualTelefono('');
-    setManualMunicipio('');
-    setManualParroquia('');
-    setManualComunidad('');
+    setManualMunicipio(jefe?.municipio || '');
+    setManualParroquia(jefe?.parroquia || '');
+    setManualComunidad(jefe?.comunidad || '');
     setManualFechaNac('');
     setManualError('');
     setIsAddModalOpen(false);
@@ -187,7 +193,7 @@ export default function DashboardPage() {
     setManualError('');
 
     if (!manualNombre.trim() || !manualApellido.trim() || !manualCedula.trim() || !manualTelefono.trim() || !manualComunidad.trim() || !manualFechaNac) {
-      setManualError('Todos los campos son estrictamente obligatorios (incluyendo ubicación).');
+      setManualError('Todos los campos son estrictamente obligatorios.');
       setManualLoading(false);
       return;
     }
@@ -202,6 +208,8 @@ export default function DashboardPage() {
           nombre: fullName,
           fechaNacimiento: manualFechaNac,
           telefono: manualTelefono.trim(),
+          municipio: manualMunicipio.trim(),
+          parroquia: manualParroquia.trim(),
           comunidad: manualComunidad.trim(),
           isManual: true
         })
@@ -305,6 +313,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-[#080d1a] text-slate-100 pb-16">
       
+      {/* Toast Notificación */}
       {toast && (
         <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 border transition-all ${
           toast.type === 'success' ? 'bg-emerald-950/90 border-emerald-800 text-emerald-200' : 'bg-red-950/90 border-red-800 text-red-200'
@@ -314,7 +323,8 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <header className="sticky top-0 z-30 bg-[#0b1326]/90 backdrop-blur-md border-b border-slate-800/80">
+      {/* HEADER SUPERIOR */}
+      <header className="sticky top-0 z-30 bg-[#0b1326]/90 backdrop-blur-md border-b border-slate-800/80 no-print">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-between gap-4">
           
           <div className="flex items-center gap-3 shrink-0">
@@ -333,36 +343,32 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-4 shrink-0">
-            {/* <button
-              onClick={() => setIsGuideOpen(true)}
-              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold border border-slate-700 transition-colors"
-            >
-              <Server className="w-3.5 h-3.5 text-sky-400" />
-              <span>CloudPanel</span>
-            </button>
-
+            {/* BOTÓN CERRAR SESIÓN BIEN VISIBLE */}
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-semibold transition-colors"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-red-950/60 hover:bg-red-900/80 text-red-200 border border-red-800/70 text-xs font-semibold transition-all shadow-sm"
+              title="Cerrar sesión"
             >
-              <LogOut className="w-3.5 h-3.5 text-slate-400" />
-              <span>Salir</span>
-            </button> */}
+              <LogOut className="w-4 h-4 text-red-400" />
+              <span>Cerrar Sesión</span>
+            </button>
 
             <img
               src="/derecha.png"
-              onError={(e) => { (e.target as HTMLImageElement).src = '/derecha.svg'; }}
               alt="Logo Derecho"
-              style={{ width: '181px', height: '151px' }}
-              className="object-contain max-h-16 w-auto"
+              width={181}
+              height={151}
+              className="object-contain max-h-16 w-auto block"
             />
           </div>
 
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-6">
+      {/* Contenido Principal */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-6 no-print">
 
+        {/* Tarjeta de Información del Jefe y Progreso */}
         <div className="glass-panel rounded-2xl p-6 sm:p-8 border border-slate-800/80 shadow-xl relative overflow-hidden">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
@@ -381,6 +387,7 @@ export default function DashboardPage() {
               </p>
             </div>
 
+            {/* Contador de Meta y Botones */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-[#070e1e] p-4 rounded-xl border border-slate-800">
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between gap-6 text-xs text-slate-400 font-semibold">
@@ -397,22 +404,36 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <button
-                onClick={() => setIsAddModalOpen(true)}
-                disabled={isComplete}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs shadow-lg transition-all ${
-                  isComplete
-                    ? 'bg-slate-900 text-slate-500 cursor-not-allowed border border-slate-800'
-                    : 'bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white shadow-sky-600/20'
-                }`}
-              >
-                <UserPlus className="w-4 h-4" />
-                <span>{isComplete ? 'Patrulla Completa' : 'Ingresar Integrante'}</span>
-              </button>
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                {/* BOTÓN IMPRIMIR PARA EL JEFE */}
+                <button
+                  onClick={handlePrint}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl font-semibold text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all shadow-sm"
+                  title="Imprimir lista oficial de patrullados"
+                >
+                  <Printer className="w-4 h-4 text-sky-400" />
+                  <span>Imprimir / PDF</span>
+                </button>
+
+                {/* BOTÓN AGREGAR INTEGRANTE */}
+                <button
+                  onClick={() => setIsAddModalOpen(true)}
+                  disabled={isComplete}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-xs shadow-lg transition-all ${
+                    isComplete
+                      ? 'bg-slate-900 text-slate-500 cursor-not-allowed border border-slate-800'
+                      : 'bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white shadow-sky-600/20'
+                  }`}
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span>{isComplete ? 'Patrulla Completa' : 'Ingresar Integrante'}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
+        {/* Listado de Integrantes (10 Cupos) */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-bold text-white flex items-center gap-2">
@@ -860,7 +881,133 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* <CloudpanelGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} /> */}
+      {/* REPORTE IMPRESO OFICIAL PARA EL JEFE (IDÉNTICO AL FORMATO SOLICITADO) */}
+      {jefe && (
+        <div className="printable-report hidden print:block">
+          <style dangerouslySetInnerHTML={{ __html: `
+            @media print {
+              @page {
+                size: letter portrait;
+                margin: 15mm;
+              }
+              body {
+                background: white !important;
+                color: black !important;
+              }
+              .printable-report {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white !important;
+                color: #111 !important;
+                font-family: Arial, Helvetica, sans-serif !important;
+              }
+            }
+          `}} />
+
+          <div style={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}>
+            
+            {/* ENCABEZADO CON AMBOS LOGOS */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
+              <img
+                src="/izquierda.png"
+                alt="Logo PSUV"
+                style={{ width: '140px', height: 'auto', objectFit: 'contain' }}
+              />
+              <img
+                src="/derecha.png"
+                alt="Logo Comisión Electoral"
+                style={{ width: '110px', height: 'auto', objectFit: 'contain' }}
+              />
+            </div>
+
+            {/* TÍTULO Y JEFE DE PATRULLA */}
+            <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+              <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0 0 10px 0', color: '#000' }}>
+                Lista de Patrulleros 1X10
+              </h1>
+              <h2 style={{ fontSize: '17px', fontWeight: 'normal', margin: 0, color: '#222' }}>
+                Jefe de patrulla: <strong>{jefe.nombre}</strong>
+              </h2>
+            </div>
+
+            {/* TABLA CON FORMATO EXACTO */}
+            <table style={{
+              width: '100%',
+              borderCollapse: 'separate',
+              borderSpacing: 0,
+              border: '1px solid #e2e8f0',
+              borderRadius: '8px',
+              overflow: 'hidden',
+              fontSize: '11px',
+              lineHeight: '1.4'
+            }}>
+              <thead>
+                <tr style={{ background: '#f8fafc', color: '#1e293b', borderBottom: '1px solid #cbd5e1' }}>
+                  <th style={{ padding: '12px 10px', textAlign: 'center', fontWeight: 'bold', borderBottom: '1px solid #cbd5e1', borderRight: '1px solid #f1f5f9' }}>
+                    Nombre y Apellido
+                  </th>
+                  <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 'bold', borderBottom: '1px solid #cbd5e1', borderRight: '1px solid #f1f5f9', width: '85px' }}>
+                    Cédula
+                  </th>
+                  <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 'bold', borderBottom: '1px solid #cbd5e1', borderRight: '1px solid #f1f5f9', width: '100px' }}>
+                    Telefono
+                  </th>
+                  <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 'bold', borderBottom: '1px solid #cbd5e1', borderRight: '1px solid #f1f5f9' }}>
+                    Municipio
+                  </th>
+                  <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 'bold', borderBottom: '1px solid #cbd5e1', borderRight: '1px solid #f1f5f9' }}>
+                    Parroquia
+                  </th>
+                  <th style={{ padding: '12px 10px', textAlign: 'center', fontWeight: 'bold', borderBottom: '1px solid #cbd5e1' }}>
+                    Centro de Votación
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {(!jefe.integrantes || jefe.integrantes.length === 0) ? (
+                  <tr>
+                    <td colSpan={6} style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>
+                      Aún no has registrado integrantes en tu patrulla 1x10.
+                    </td>
+                  </tr>
+                ) : (
+                  jefe.integrantes.map((m: any, idx: number) => {
+                    const cleanCI = m.cedula ? m.cedula.replace(/^[VE]-?/i, '') : '';
+                    const isLast = idx === jefe.integrantes.length - 1;
+
+                    return (
+                      <tr key={m.id || idx} style={{ borderBottom: isLast ? 'none' : '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '10px 10px', textAlign: 'center', fontWeight: '500', color: '#0f172a', borderBottom: isLast ? 'none' : '1px solid #e2e8f0', borderRight: '1px solid #f8fafc' }}>
+                          {m.nombre}
+                        </td>
+                        <td style={{ padding: '10px 8px', textAlign: 'center', color: '#334155', borderBottom: isLast ? 'none' : '1px solid #e2e8f0', borderRight: '1px solid #f8fafc' }}>
+                          {cleanCI}
+                        </td>
+                        <td style={{ padding: '10px 8px', textAlign: 'center', color: '#334155', borderBottom: isLast ? 'none' : '1px solid #e2e8f0', borderRight: '1px solid #f8fafc' }}>
+                          {m.telefono || 'S/N'}
+                        </td>
+                        <td style={{ padding: '10px 8px', textAlign: 'center', textTransform: 'uppercase', color: '#334155', borderBottom: isLast ? 'none' : '1px solid #e2e8f0', borderRight: '1px solid #f8fafc' }}>
+                          {m.municipio || jefe.municipio || 'JUAN GERMAN ROSCIO N.'}
+                        </td>
+                        <td style={{ padding: '10px 8px', textAlign: 'center', textTransform: 'uppercase', color: '#334155', borderBottom: isLast ? 'none' : '1px solid #e2e8f0', borderRight: '1px solid #f8fafc' }}>
+                          {m.parroquia || jefe.parroquia || 'SAN JUAN DE LOS MORROS'}
+                        </td>
+                        <td style={{ padding: '10px 10px', textAlign: 'center', textTransform: 'uppercase', color: '#334155', borderBottom: isLast ? 'none' : '1px solid #e2e8f0' }}>
+                          {m.centroVotacion || m.comunidad || jefe.comunidad || 'CIRCUITO COMUNAL'}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );
