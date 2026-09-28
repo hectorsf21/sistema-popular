@@ -6,7 +6,7 @@ import {
   Users, Search, LogOut, CheckCircle2, Eye,
   BarChart3, MapPin, Server, X, UserCheck, Layers, Printer, FileDown
 } from 'lucide-react';
-import CloudpanelGuideModal from '@/components/CloudpanelGuideModal';
+//import CloudpanelGuideModal from '@/components/CloudpanelGuideModal';
 import CascadingLocationSelect from '@/components/CascadingLocationSelect';
 
 interface IntegranteItem {
@@ -222,7 +222,7 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
           </div>
 
           <div className="flex items-center gap-4 shrink-0">
-            <button
+            {/* <button
               onClick={() => setIsGuideOpen(true)}
               className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold border border-slate-700 transition-colors"
             >
@@ -236,7 +236,7 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
             >
               <LogOut className="w-3.5 h-3.5 text-slate-400" />
               <span>Salir</span>
-            </button>
+            </button> */}
 
             <img
               src="/derecha.png"
@@ -542,62 +542,136 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
       )}
 
       {/* REPORTE IMPRESO OFICIAL */}
+      {/* REPORTE IMPRESO OFICIAL (IDÉNTICO A LA MUESTRA) */}
       {selectedJefeModal && (
         <div className="printable-report hidden print:block">
-          <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
-            <div style={{ textAlign: 'center', marginBottom: '20px', borderBottom: '2px solid #000', paddingBottom: '10px' }}>
-              <h2 style={{ fontSize: '18px', margin: 0, fontWeight: 'bold' }}>REPUBLICA BOLIVARIANA DE VENEZUELA</h2>
-              <h1 style={{ fontSize: '22px', margin: '5px 0', color: '#000', fontWeight: '800' }}>1X10 COMUNAL GUARICO</h1>
-              <p style={{ fontSize: '12px', color: '#555', margin: 0 }}>Reporte Oficial de Registro de Patrulla 1x10</p>
-            </div>
+          <style dangerouslySetInnerHTML={{ __html: `
+            @media print {
+              @page {
+                size: letter portrait;
+                margin: 15mm;
+              }
+              body {
+                background: white !important;
+                color: black !important;
+              }
+              .printable-report {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white !important;
+                color: #111 !important;
+                font-family: Arial, Helvetica, sans-serif !important;
+              }
+            }
+          `}} />
 
-            <div style={{ marginBottom: '20px', fontSize: '13px', lineHeight: '1.6' }}>
-              <p><strong>JEFE DE PATRULLA:</strong> {selectedJefeModal.nombre}</p>
-              <p><strong>CÉDULA DE IDENTIDAD:</strong> {selectedJefeModal.cedula}</p>
-              <p><strong>MUNICIPIO:</strong> {selectedJefeModal.municipio || 'MP. INFANTE'}</p>
-              <p><strong>PARROQUIA:</strong> {selectedJefeModal.parroquia || 'PQ. VALLE DE LA PASCUA'}</p>
-              <p><strong>COMUNA / CIRCUITO:</strong> {selectedJefeModal.comunidad}</p>
-              <p><strong>TOTAL INTEGRANTES:</strong> {selectedJefeModal.integrantes?.length || 0} / 10</p>
-            </div>
-
-            <h3 style={{ fontSize: '15px', borderBottom: '1px solid #ccc', paddingBottom: '5px' }}>LISTADO DE INTEGRANTES PATRULLADOS (1x10)</h3>
+          <div style={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}>
             
-            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px', fontSize: '12px' }}>
+            {/* ENCABEZADO CON AMBOS LOGOS */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' }}>
+              <img
+                src="/izquierda.png"
+                alt="Logo PSUV"
+                style={{ width: '140px', height: 'auto', objectFit: 'contain' }}
+              />
+              <img
+                src="/derecha.png"
+                alt="Logo Comisión Electoral"
+                style={{ width: '110px', height: 'auto', objectFit: 'contain' }}
+              />
+            </div>
+
+            {/* TÍTULO Y JEFE DE PATRULLA */}
+            <div style={{ textAlign: 'center', marginBottom: '25px' }}>
+              <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0 0 10px 0', color: '#000' }}>
+                Lista de Patrulleros 1X10
+              </h1>
+              <h2 style={{ fontSize: '17px', fontWeight: 'normal', margin: 0, color: '#222' }}>
+                Jefe de patrulla: <strong>{selectedJefeModal.nombre}</strong>
+              </h2>
+            </div>
+
+            {/* TABLA CON FORMATO EXACTO */}
+            <table style={{
+              width: '100%',
+              borderCollapse: 'separate',
+              borderSpacing: 0,
+              border: '1px solid #e2e8f0',
+              borderRadius: '8px',
+              overflow: 'hidden',
+              fontSize: '11px',
+              lineHeight: '1.4'
+            }}>
               <thead>
-                <tr style={{ background: '#f2f2f2', textAlign: 'left' }}>
-                  <th style={{ border: '1px solid #ddd', padding: '8px', width: '35px' }}>#</th>
-                  <th style={{ border: '1px solid #ddd', padding: '8px', width: '120px' }}>Cédula</th>
-                  <th style={{ border: '1px solid #ddd', padding: '8px' }}>Nombre Completo</th>
-                  <th style={{ border: '1px solid #ddd', padding: '8px', width: '120px' }}>Teléfono</th>
-                  <th style={{ border: '1px solid #ddd', padding: '8px', width: '140px' }}>Firma / Verificación</th>
+                <tr style={{ background: '#f8fafc', color: '#1e293b', borderBottom: '1px solid #cbd5e1' }}>
+                  <th style={{ padding: '12px 10px', textAlign: 'center', fontWeight: 'bold', borderBottom: '1px solid #cbd5e1', borderRight: '1px solid #f1f5f9' }}>
+                    Nombre y Apellido
+                  </th>
+                  <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 'bold', borderBottom: '1px solid #cbd5e1', borderRight: '1px solid #f1f5f9', width: '85px' }}>
+                    Cédula
+                  </th>
+                  <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 'bold', borderBottom: '1px solid #cbd5e1', borderRight: '1px solid #f1f5f9', width: '100px' }}>
+                    Telefono
+                  </th>
+                  <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 'bold', borderBottom: '1px solid #cbd5e1', borderRight: '1px solid #f1f5f9' }}>
+                    Municipio
+                  </th>
+                  <th style={{ padding: '12px 8px', textAlign: 'center', fontWeight: 'bold', borderBottom: '1px solid #cbd5e1', borderRight: '1px solid #f1f5f9' }}>
+                    Parroquia
+                  </th>
+                  <th style={{ padding: '12px 10px', textAlign: 'center', fontWeight: 'bold', borderBottom: '1px solid #cbd5e1' }}>
+                    Centro de Votación
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {selectedJefeModal.integrantes?.map((m: any, idx: number) => (
-                  <tr key={m.id}>
-                    <td style={{ border: '1px solid #ddd', padding: '8px', fontWeight: 'bold' }}>{idx + 1}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{m.cedula}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{m.nombre}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px' }}>{m.telefono || 'N/A'}</td>
-                    <td style={{ border: '1px solid #ddd', padding: '8px', height: '28px' }}></td>
+                {(!selectedJefeModal.integrantes || selectedJefeModal.integrantes.length === 0) ? (
+                  <tr>
+                    <td colSpan={6} style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>
+                      No hay integrantes registrados en esta patrulla.
+                    </td>
                   </tr>
-                ))}
+                ) : (
+                  selectedJefeModal.integrantes.map((m: any, idx: number) => {
+                    // Normalizar cédula solo números o con V-
+                    const cleanCI = m.cedula ? m.cedula.replace(/^[VE]-?/i, '') : '';
+                    const isLast = idx === selectedJefeModal.integrantes.length - 1;
+
+                    return (
+                      <tr key={m.id || idx} style={{ borderBottom: isLast ? 'none' : '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '10px 10px', textAlign: 'center', fontWeight: '500', color: '#0f172a', borderBottom: isLast ? 'none' : '1px solid #e2e8f0', borderRight: '1px solid #f8fafc' }}>
+                          {m.nombre}
+                        </td>
+                        <td style={{ padding: '10px 8px', textAlign: 'center', color: '#334155', borderBottom: isLast ? 'none' : '1px solid #e2e8f0', borderRight: '1px solid #f8fafc' }}>
+                          {cleanCI}
+                        </td>
+                        <td style={{ padding: '10px 8px', textAlign: 'center', color: '#334155', borderBottom: isLast ? 'none' : '1px solid #e2e8f0', borderRight: '1px solid #f8fafc' }}>
+                          {m.telefono || 'S/N'}
+                        </td>
+                        <td style={{ padding: '10px 8px', textAlign: 'center', textTransform: 'uppercase', color: '#334155', borderBottom: isLast ? 'none' : '1px solid #e2e8f0', borderRight: '1px solid #f8fafc' }}>
+                          {m.municipio || selectedJefeModal.municipio || 'JUAN GERMAN ROSCIO N.'}
+                        </td>
+                        <td style={{ padding: '10px 8px', textAlign: 'center', textTransform: 'uppercase', color: '#334155', borderBottom: isLast ? 'none' : '1px solid #e2e8f0', borderRight: '1px solid #f8fafc' }}>
+                          {m.parroquia || selectedJefeModal.parroquia || 'SAN JUAN DE LOS MORROS'}
+                        </td>
+                        <td style={{ padding: '10px 10px', textAlign: 'center', textTransform: 'uppercase', color: '#334155', borderBottom: isLast ? 'none' : '1px solid #e2e8f0' }}>
+                          {m.comunidad || selectedJefeModal.comunidad || 'CENTRO COMUNAL'}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
 
-            <div style={{ marginTop: '50px', display: 'flex', justifyContent: 'space-between', textAlign: 'center', fontSize: '12px' }}>
-              <div style={{ width: '40%', borderTop: '1px solid #000', paddingTop: '5px' }}>
-                Firma del Jefe de Patrulla<br/>{selectedJefeModal.cedula}
-              </div>
-              <div style={{ width: '40%', borderTop: '1px solid #000', paddingTop: '5px' }}>
-                Verificación Master Admin<br/>1X10 COMUNAL GUARICO
-              </div>
-            </div>
           </div>
         </div>
       )}
 
-      <CloudpanelGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
+      {/* <CloudpanelGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} /> */}
 
     </div>
   );

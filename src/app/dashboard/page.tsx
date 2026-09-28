@@ -6,7 +6,7 @@ import {
   Users, UserPlus, LogOut, CheckCircle2, AlertCircle, Trash2, Edit3,
   Search, MapPin, Phone, X, Server
 } from 'lucide-react';
-import CloudpanelGuideModal from '@/components/CloudpanelGuideModal';
+//import CloudpanelGuideModal from '@/components/CloudpanelGuideModal';
 import FormLocationCascade from '@/components/FormLocationCascade';
 
 interface Integrante {
@@ -333,7 +333,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-4 shrink-0">
-            <button
+            {/* <button
               onClick={() => setIsGuideOpen(true)}
               className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold border border-slate-700 transition-colors"
             >
@@ -347,7 +347,7 @@ export default function DashboardPage() {
             >
               <LogOut className="w-3.5 h-3.5 text-slate-400" />
               <span>Salir</span>
-            </button>
+            </button> */}
 
             <img
               src="/derecha.png"
@@ -860,7 +860,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <CloudpanelGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} />
+      {/* <CloudpanelGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} /> */}
 
     </div>
   );
