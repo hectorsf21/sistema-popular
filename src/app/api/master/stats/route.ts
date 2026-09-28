@@ -19,8 +19,10 @@ export async function GET() {
     const totalGeneral = totalJefes + totalIntegrantes; // Jefes + Integrantes
     const jefesCompletos = jefes.filter(j => j.isCompleted).length;
 
-    // Cálculo real sobre la meta global de 572.000 (con 2 decimales para ver el avance)
-    const metaMetaPorcentaje = Number(((totalGeneral / META_GLOBAL_OBJETIVO) * 100).toFixed(2));
+    // Cálculo con 2 decimales reales
+    const metaMetaPorcentaje = totalGeneral > 0
+      ? Number(((totalGeneral / META_GLOBAL_OBJETIVO) * 100).toFixed(2))
+      : 0.00;
 
     // Conteo por comunidades
     const comunidadesMap: Record<string, number> = {};

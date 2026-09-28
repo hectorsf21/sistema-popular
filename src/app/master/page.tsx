@@ -4,9 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Users, Search, LogOut, CheckCircle2, Eye,
-  BarChart3, MapPin, Server, X, UserCheck, Layers, Printer, FileDown
+  BarChart3, MapPin, X, UserCheck, Layers, Printer, FileDown
 } from 'lucide-react';
-//import CloudpanelGuideModal from '@/components/CloudpanelGuideModal';
 import CascadingLocationSelect from '@/components/CascadingLocationSelect';
 
 interface IntegranteItem {
@@ -59,7 +58,6 @@ export default function MasterPage() {
   // Modales
   const [selectedJefeModal, setSelectedJefeModal] = useState<any | null>(null);
   const [loadingJefeDetails, setLoadingJefeDetails] = useState(false);
-  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   const fetchMasterStats = async () => {
     try {
@@ -91,7 +89,7 @@ export default function MasterPage() {
     totalIntegrantes: jefes.reduce((acc, j) => acc + j.totalIntegrantes, 0),
     totalGeneral: jefes.length + jefes.reduce((acc, j) => acc + j.totalIntegrantes, 0),
     jefesCompletos: jefes.filter(j => j.isCompleted).length,
-    metaPorcentaje: 0,
+    metaPorcentaje: 0.00,
     metaObjetivo: 572000,
     comunidadesCount: new Set(jefes.map(j => j.comunidad)).size
   };
@@ -142,11 +140,11 @@ CEDULA: ${selectedJefeModal.cedula}
 MUNICIPIO: ${selectedJefeModal.municipio || 'MP. INFANTE'}
 PARROQUIA: ${selectedJefeModal.parroquia || 'PQ. VALLE DE LA PASCUA'}
 COMUNA / CIRCUITO: ${selectedJefeModal.comunidad}
-TOTAL INTEGRANTES: ${selectedJefeModal.integrantes.length} / 10
+TOTAL INTEGRANTES: ${selectedJefeModal.integrantes?.length || 0} / 10
 =====================================================
 LISTADO DE INTEGRANTES PATRULLADOS:
 -----------------------------------------------------
-${selectedJefeModal.integrantes.map((m: any, i: number) => 
+${(selectedJefeModal.integrantes || []).map((m: any, i: number) => 
   `#${i + 1} | Cédula: ${m.cedula} | ${m.nombre} | Tel: ${m.telefono || 'N/A'}`
 ).join('\n')}
 =====================================================
@@ -160,7 +158,7 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
     URL.revokeObjectURL(url);
   };
 
-  // FILTRO INTELIGENTE: Busca coincidencias en el Jefe O en sus integrantes
+  // Filtro con búsqueda cruzada (busca por Jefe O por Integrante)
   const filteredJefes = jefes.filter(j => {
     if (selectedMunicipio && j.municipio && j.municipio.toLowerCase() !== selectedMunicipio.toLowerCase()) return false;
     if (selectedParroquia && j.parroquia && j.parroquia.toLowerCase() !== selectedParroquia.toLowerCase()) return false;
@@ -168,13 +166,11 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      // Coincide con el Jefe
       const matchJefe =
         j.nombre.toLowerCase().includes(term) ||
         j.cedula.toLowerCase().includes(term) ||
         j.comunidad.toLowerCase().includes(term);
 
-      // Coincide con algún integrante de su patrulla
       const matchIntegrante = j.integrantes?.some(
         (i) => i.nombre.toLowerCase().includes(term) || i.cedula.toLowerCase().includes(term)
       );
@@ -222,21 +218,13 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
           </div>
 
           <div className="flex items-center gap-4 shrink-0">
-            {/* <button
-              onClick={() => setIsGuideOpen(true)}
-              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold border border-slate-700 transition-colors"
-            >
-              <Server className="w-3.5 h-3.5 text-sky-400" />
-              <span>CloudPanel</span>
-            </button>
-
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs font-semibold transition-colors"
             >
               <LogOut className="w-3.5 h-3.5 text-slate-400" />
               <span>Salir</span>
-            </button> */}
+            </button>
 
             <img
               src="/derecha.png"
@@ -291,7 +279,10 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
           <div className="glass-panel p-5 rounded-2xl border border-slate-800 flex items-center justify-between">
             <div>
               <p className="text-xs text-slate-400 font-semibold uppercase">Meta Global (572k)</p>
-              <h3 className="text-3xl font-extrabold text-emerald-400 mt-1">{currentStats.metaPorcentaje}%</h3>
+              {/* PORCENTAJE CON DOS DECIMALES EXACTOS */}
+              <h3 className="text-3xl font-extrabold text-emerald-400 mt-1">
+                {Number(currentStats.metaPorcentaje || 0).toFixed(2)}%
+              </h3>
               <p className="text-[11px] text-slate-400 mt-1">{currentStats.jefesCompletos} patrullas 10/10</p>
             </div>
             <div className="w-11 h-11 rounded-xl bg-emerald-950 text-emerald-400 flex items-center justify-center border border-emerald-800">
@@ -300,7 +291,7 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
           </div>
         </div>
 
-        {/* SELECTOR EN CASCADA (Filtro por territorio) */}
+        {/* SELECTOR EN CASCADA */}
         <CascadingLocationSelect
           selectedMunicipio={selectedMunicipio}
           selectedParroquia={selectedParroquia}
@@ -383,7 +374,6 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
                   </tr>
                 ) : (
                   filteredJefes.map((jefe) => {
-                    // Detectar si la búsqueda coincide con algún integrante de este jefe
                     const matchedMember = searchTerm
                       ? jefe.integrantes?.find(
                           (i) =>
@@ -541,7 +531,6 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
         </div>
       )}
 
-      {/* REPORTE IMPRESO OFICIAL */}
       {/* REPORTE IMPRESO OFICIAL (IDÉNTICO A LA MUESTRA) */}
       {selectedJefeModal && (
         <div className="printable-report hidden print:block">
@@ -636,7 +625,6 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
                   </tr>
                 ) : (
                   selectedJefeModal.integrantes.map((m: any, idx: number) => {
-                    // Normalizar cédula solo números o con V-
                     const cleanCI = m.cedula ? m.cedula.replace(/^[VE]-?/i, '') : '';
                     const isLast = idx === selectedJefeModal.integrantes.length - 1;
 
@@ -658,7 +646,7 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
                           {m.parroquia || selectedJefeModal.parroquia || 'SAN JUAN DE LOS MORROS'}
                         </td>
                         <td style={{ padding: '10px 10px', textAlign: 'center', textTransform: 'uppercase', color: '#334155', borderBottom: isLast ? 'none' : '1px solid #e2e8f0' }}>
-                          {m.comunidad || selectedJefeModal.comunidad || 'CENTRO COMUNAL'}
+                          {m.centroVotacion || m.comunidad || selectedJefeModal.comunidad || 'CIRCUITO COMUNAL'}
                         </td>
                       </tr>
                     );
@@ -670,8 +658,6 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
           </div>
         </div>
       )}
-
-      {/* <CloudpanelGuideModal isOpen={isGuideOpen} onClose={() => setIsGuideOpen(false)} /> */}
 
     </div>
   );
