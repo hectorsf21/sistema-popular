@@ -29,10 +29,12 @@ model Integrante {
   id              String       @id @default(uuid())
   jefeId          String
   jefe            JefePatrulla @relation(fields: [jefeId], references: [id], onDelete: Cascade)
-  cedula          String       @unique // Regla del sistema: No se puede repetir en otra patrulla
+  cedula          String       @unique
   nombre          String
   fechaNacimiento String
   telefono        String?
+  municipio       String?
+  parroquia       String?
   comunidad       String?
   responsabilidad String?      @default("Patrullado")
   createdAt       DateTime     @default(now())

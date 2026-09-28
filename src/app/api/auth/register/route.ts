@@ -8,12 +8,11 @@ import { validateAgeRangeForRegister } from '@/lib/utils';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { nombre, apellido, cedula, telefono, comunidad, fechaNacimiento } = body;
+    const { nombre, apellido, cedula, telefono, municipio, parroquia, comunidad, fechaNacimiento } = body;
 
-    // Validación estricta: ningún campo puede estar vacío
     if (!nombre || !apellido || !cedula || !telefono || !comunidad || !fechaNacimiento) {
       return NextResponse.json(
-        { success: false, message: 'Todos los campos son obligatorios (nombre, apellido, cédula, teléfono, comunidad y fecha de nacimiento).' },
+        { success: false, message: 'Todos los campos son obligatorios.' },
         { status: 400 }
       );
     }
@@ -22,7 +21,7 @@ export async function POST(request: Request) {
     const cleanCedula = normCedula.startsWith('V') ? `V-${normCedula.slice(1)}` : (normCedula.startsWith('E') ? `E-${normCedula.slice(1)}` : `V-${normCedula}`);
     const fullName = `${nombre.trim()} ${apellido.trim()}`.toUpperCase();
 
-    // 1. Validar rango de edad (15 a 18 años) para el registro manual
+    // 1. Validar rango de edad (15 a 18 años)
     const ageCheck = validateAgeRangeForRegister(fechaNacimiento);
     if (!ageCheck.valid) {
       return NextResponse.json(
@@ -49,7 +48,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 4. Crear nuevo JefePatrulla en MySQL con Prisma
+    // 4. Crear nuevo JefePatrulla en MySQL
     let jefe = null;
     try {
       jefe = await prisma.jefePatrulla.create({
@@ -58,6 +57,8 @@ export async function POST(request: Request) {
           nombre: fullName,
           fechaNacimiento,
           telefono: telefono.trim(),
+          municipio: (municipio && municipio.trim()) || 'MP. INFANTE',
+          parroquia: (parroquia && parroquia.trim()) || 'PQ. VALLE DE LA PASCUA',
           comunidad: comunidad.trim(),
         }
       });

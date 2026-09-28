@@ -7,6 +7,8 @@ export interface IntegranteData {
   nombre: string;
   fechaNacimiento: string;
   telefono?: string | null;
+  municipio?: string | null;
+  parroquia?: string | null;
   comunidad?: string | null;
   responsabilidad?: string | null;
   createdAt: string;
@@ -25,7 +27,6 @@ export interface JefeData {
   integrantes: IntegranteData[];
 }
 
-// Memory fallback para desarrollo si MySQL no está disponible
 const memoryJefes = new Map<string, JefeData>();
 const memoryIntegrantes = new Map<string, IntegranteData>();
 
@@ -90,28 +91,6 @@ export async function getJefeById(jefeId: string): Promise<JefeData | null> {
   return null;
 }
 
-export async function checkIntegranteExists(cedula: string): Promise<{ exists: boolean; jefeNombre?: string }> {
-  try {
-    const integrante = await prisma.integrante.findUnique({
-      where: { cedula }
-    });
-
-    if (integrante) {
-      return { exists: true };
-    }
-  } catch (error) {
-    console.warn('Prisma DB query fallback to memory:', error);
-  }
-
-  for (const i of memoryIntegrantes.values()) {
-    if (i.cedula === cedula) {
-      return { exists: true };
-    }
-  }
-
-  return { exists: false };
-}
-
 export async function checkPersonExistsInDB(cedulaInput: string): Promise<{
   exists: boolean;
   role?: 'jefe' | 'integrante';
@@ -121,8 +100,6 @@ export async function checkPersonExistsInDB(cedulaInput: string): Promise<{
   const cleanKeyFormatted = norm.startsWith('V') ? `V-${norm.slice(1)}` : (norm.startsWith('E') ? `E-${norm.slice(1)}` : `V-${norm}`);
 
   try {
-    // Los Jefes SÍ pueden ser parte del 1x10 de otro Jefe.
-    // Solo validamos que no esté duplicado como integrante en otra patrulla.
     const integrante = await prisma.integrante.findFirst({
       where: {
         OR: [
@@ -144,7 +121,6 @@ export async function checkPersonExistsInDB(cedulaInput: string): Promise<{
     console.warn('Prisma DB query checkPersonExistsInDB fallback to memory:', error);
   }
 
-  // Check memory
   for (const i of memoryIntegrantes.values()) {
     const iNorm = i.cedula.toUpperCase().replace(/[\.\s\-]/g, '');
     if (iNorm === norm || i.cedula === cleanKeyFormatted || i.cedula === cedulaInput) {
@@ -165,6 +141,8 @@ export async function addIntegrante(data: {
   nombre: string;
   fechaNacimiento: string;
   telefono?: string;
+  municipio?: string;
+  parroquia?: string;
   comunidad?: string;
   responsabilidad?: string;
 }): Promise<IntegranteData> {
@@ -176,6 +154,8 @@ export async function addIntegrante(data: {
         nombre: data.nombre,
         fechaNacimiento: data.fechaNacimiento,
         telefono: data.telefono,
+        municipio: data.municipio,
+        parroquia: data.parroquia,
         comunidad: data.comunidad,
         responsabilidad: data.responsabilidad || 'Patrullado'
       }
@@ -196,6 +176,8 @@ export async function addIntegrante(data: {
     nombre: data.nombre,
     fechaNacimiento: data.fechaNacimiento,
     telefono: data.telefono || null,
+    municipio: data.municipio || null,
+    parroquia: data.parroquia || null,
     comunidad: data.comunidad || null,
     responsabilidad: data.responsabilidad || 'Patrullado',
     createdAt: new Date().toISOString()
@@ -265,11 +247,22 @@ export async function deleteIntegrante(id: string): Promise<boolean> {
   return true;
 }
 
+// Devuelve los jefes con sus integrantes incluidos para búsquedas cruzadas en el Master
 export async function getAllJefesWithStats() {
   try {
     const jefes = await prisma.jefePatrulla.findMany({
       include: {
-        integrantes: true
+        integrantes: {
+          select: {
+            id: true,
+            cedula: true,
+            nombre: true,
+            telefono: true,
+            municipio: true,
+            parroquia: true,
+            comunidad: true
+          }
+        }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -284,7 +277,8 @@ export async function getAllJefesWithStats() {
         comunidad: j.comunidad || 'Sin comunidad',
         totalIntegrantes: j.integrantes.length,
         isCompleted: j.integrantes.length >= 10,
-        createdAt: j.createdAt.toISOString()
+        createdAt: j.createdAt.toISOString(),
+        integrantes: j.integrantes
       }));
     }
   } catch (error) {
@@ -295,9 +289,12 @@ export async function getAllJefesWithStats() {
     id: j.id,
     cedula: j.cedula,
     nombre: j.nombre,
+    municipio: j.municipio || '',
+    parroquia: j.parroquia || '',
     comunidad: j.comunidad || 'Sin comunidad',
     totalIntegrantes: j.integrantes.length,
     isCompleted: j.integrantes.length >= 10,
-    createdAt: j.createdAt
+    createdAt: j.createdAt,
+    integrantes: j.integrantes
   }));
 }

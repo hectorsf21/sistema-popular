@@ -3,11 +3,21 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  Shield, Users, Search, LogOut, CheckCircle2, Eye,
+  Users, Search, LogOut, CheckCircle2, Eye,
   BarChart3, MapPin, Server, X, UserCheck, Layers, Printer, FileDown
 } from 'lucide-react';
 import CloudpanelGuideModal from '@/components/CloudpanelGuideModal';
 import CascadingLocationSelect from '@/components/CascadingLocationSelect';
+
+interface IntegranteItem {
+  id: string;
+  cedula: string;
+  nombre: string;
+  telefono?: string;
+  municipio?: string;
+  parroquia?: string;
+  comunidad?: string;
+}
 
 interface JefeItem {
   id: string;
@@ -19,6 +29,7 @@ interface JefeItem {
   totalIntegrantes: number;
   isCompleted: boolean;
   createdAt: string;
+  integrantes?: IntegranteItem[];
 }
 
 interface StatsData {
@@ -27,72 +38,15 @@ interface StatsData {
   totalGeneral: number;
   jefesCompletos: number;
   metaPorcentaje: number;
+  metaObjetivo?: number;
   comunidadesCount: number;
 }
-
-const MOCK_JEFES_STATIC: JefeItem[] = [
-  {
-    id: 'demo-1',
-    cedula: 'V-14893609',
-    nombre: 'DAYANA MARIA HERRERA',
-    municipio: 'MP. INFANTE',
-    parroquia: 'PQ. VALLE DE LA PASCUA',
-    comunidad: 'CIRCUITO ANEXADO INFANTE II',
-    totalIntegrantes: 10,
-    isCompleted: true,
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'demo-2',
-    cedula: 'V-14893613',
-    nombre: 'ALFONZO JOSE HERNANDEZ BOLIVAR',
-    municipio: 'MP. INFANTE',
-    parroquia: 'PQ. VALLE DE LA PASCUA',
-    comunidad: 'SECTOR GUAMACHAL',
-    totalIntegrantes: 8,
-    isCompleted: false,
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'demo-3',
-    cedula: 'V-14893614',
-    nombre: 'WOLFAN RAMON APONTE RODRIGUEZ',
-    municipio: 'MP. INFANTE',
-    parroquia: 'PQ. VALLE DE LA PASCUA',
-    comunidad: 'CIRCUITO JUANA RAMIREZ LA AVANZADORA',
-    totalIntegrantes: 10,
-    isCompleted: true,
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'demo-4',
-    cedula: 'V-55667788',
-    nombre: 'Ana Karina Martínez Díaz',
-    municipio: 'MP. ROSTRO DE CRISTO',
-    parroquia: 'PQ. SAN JOSE DE TIZNADOS',
-    comunidad: 'COMUNA GUERICO UNIDO Y ORGANIZADO',
-    totalIntegrantes: 6,
-    isCompleted: false,
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'demo-5',
-    cedula: 'V-99887766',
-    nombre: 'Pedro Antonio Sánchez Morales',
-    municipio: 'MP. ROSTRO DE CRISTO',
-    parroquia: 'PQ. SAN JOSE DE TIZNADOS',
-    comunidad: 'CIRCUITO CAMAGUAN POTENCIA',
-    totalIntegrantes: 10,
-    isCompleted: true,
-    createdAt: new Date().toISOString()
-  }
-];
 
 export default function MasterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<StatsData | null>(null);
-  const [jefes, setJefes] = useState<JefeItem[]>(MOCK_JEFES_STATIC);
+  const [jefes, setJefes] = useState<JefeItem[]>([]);
   
   // Filtros
   const [searchTerm, setSearchTerm] = useState('');
@@ -111,18 +65,18 @@ export default function MasterPage() {
     try {
       const res = await fetch('/api/master/stats');
       if (res.status === 401) {
-        console.warn('Ejecutando en modo plano / Vercel.');
-      } else {
-        const data = await res.json();
-        if (data.success) {
-          setStats(data.stats);
-          if (data.jefes && data.jefes.length > 0) {
-            setJefes(data.jefes);
-          }
+        router.push('/login');
+        return;
+      }
+      const data = await res.json();
+      if (data.success) {
+        setStats(data.stats);
+        if (data.jefes) {
+          setJefes(data.jefes);
         }
       }
     } catch (err) {
-      console.warn('Usando mock estático de respaldo.');
+      console.error('Error cargando estadísticas master:', err);
     } finally {
       setLoading(false);
     }
@@ -137,7 +91,8 @@ export default function MasterPage() {
     totalIntegrantes: jefes.reduce((acc, j) => acc + j.totalIntegrantes, 0),
     totalGeneral: jefes.length + jefes.reduce((acc, j) => acc + j.totalIntegrantes, 0),
     jefesCompletos: jefes.filter(j => j.isCompleted).length,
-    metaPorcentaje: jefes.length > 0 ? Math.round((jefes.reduce((acc, j) => acc + j.totalIntegrantes, 0) / (jefes.length * 10)) * 100) : 0,
+    metaPorcentaje: 0,
+    metaObjetivo: 572000,
     comunidadesCount: new Set(jefes.map(j => j.comunidad)).size
   };
 
@@ -166,23 +121,11 @@ export default function MasterPage() {
       // Fallback
     }
 
-    setTimeout(() => {
-      setSelectedJefeModal({
-        id: jefe.id,
-        cedula: jefe.cedula,
-        nombre: jefe.nombre,
-        municipio: jefe.municipio,
-        parroquia: jefe.parroquia,
-        comunidad: jefe.comunidad,
-        integrantes: Array.from({ length: jefe.totalIntegrantes }).map((_, idx) => ({
-          id: `int-${idx}`,
-          cedula: `V-${20000000 + idx * 4321}`,
-          nombre: `INTEGRANTE REGISTRADO ${idx + 1}`,
-          telefono: `0414-${1000000 + idx * 1111}`
-        }))
-      });
-      setLoadingJefeDetails(false);
-    }, 200);
+    setSelectedJefeModal({
+      ...jefe,
+      integrantes: jefe.integrantes || []
+    });
+    setLoadingJefeDetails(false);
   };
 
   const handlePrintPDF = () => {
@@ -217,6 +160,7 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
     URL.revokeObjectURL(url);
   };
 
+  // FILTRO INTELIGENTE: Busca coincidencias en el Jefe O en sus integrantes
   const filteredJefes = jefes.filter(j => {
     if (selectedMunicipio && j.municipio && j.municipio.toLowerCase() !== selectedMunicipio.toLowerCase()) return false;
     if (selectedParroquia && j.parroquia && j.parroquia.toLowerCase() !== selectedParroquia.toLowerCase()) return false;
@@ -224,11 +168,18 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      const matchText =
+      // Coincide con el Jefe
+      const matchJefe =
         j.nombre.toLowerCase().includes(term) ||
         j.cedula.toLowerCase().includes(term) ||
         j.comunidad.toLowerCase().includes(term);
-      if (!matchText) return false;
+
+      // Coincide con algún integrante de su patrulla
+      const matchIntegrante = j.integrantes?.some(
+        (i) => i.nombre.toLowerCase().includes(term) || i.cedula.toLowerCase().includes(term)
+      );
+
+      if (!matchJefe && !matchIntegrante) return false;
     }
 
     if (filterType === 'complete') return j.isCompleted;
@@ -246,12 +197,11 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
   return (
     <div className="min-h-screen bg-[#080d1a] text-slate-100 pb-16">
       
-      {/* HEADER SUPERIOR CON DOS LOGOS (Izquierda 245x111, Derecha 181x151) */}
+      {/* HEADER SUPERIOR */}
       <header className="sticky top-0 z-30 bg-[#0b1326]/90 backdrop-blur-md border-b border-slate-800/80 no-print">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 flex items-center justify-between gap-4">
           
-          {/* LOGO IZQUIERDO SUPERIOR (245px ancho x 111px alto) */}
-           <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-3 shrink-0">
             <img
               src="/izquierda.png"
               alt="Logo Izquierdo"
@@ -261,7 +211,6 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
             />
           </div>
 
-          {/* Título Central */}
           <div className="hidden lg:block text-center">
             <div className="flex items-center justify-center gap-2">
               <h1 className="font-extrabold text-white text-lg tracking-tight">1X10 COMUNAL GUARICO</h1>
@@ -272,7 +221,6 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
             <p className="text-xs text-slate-400">Supervisión Territorial 1x10</p>
           </div>
 
-          {/* LOGO DERECHO SUPERIOR (181px ancho x 151px alto) & Botones */}
           <div className="flex items-center gap-4 shrink-0">
             <button
               onClick={() => setIsGuideOpen(true)}
@@ -292,10 +240,10 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
 
             <img
               src="/derecha.png"
-              onError={(e) => { (e.target as HTMLImageElement).src = '/derecha.svg'; }}
               alt="Logo Derecho"
-              style={{ width: '181px', height: '151px' }}
-              className="object-contain max-h-16 w-auto"
+              width={181}
+              height={151}
+              className="object-contain max-h-16 w-auto block"
             />
           </div>
 
@@ -342,9 +290,9 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
 
           <div className="glass-panel p-5 rounded-2xl border border-slate-800 flex items-center justify-between">
             <div>
-              <p className="text-xs text-slate-400 font-semibold uppercase">Meta 1x10 Alcanzada</p>
+              <p className="text-xs text-slate-400 font-semibold uppercase">Meta Global (572k)</p>
               <h3 className="text-3xl font-extrabold text-emerald-400 mt-1">{currentStats.metaPorcentaje}%</h3>
-              <p className="text-[11px] text-slate-400 mt-1">{currentStats.jefesCompletos} patrullas completas</p>
+              <p className="text-[11px] text-slate-400 mt-1">{currentStats.jefesCompletos} patrullas 10/10</p>
             </div>
             <div className="w-11 h-11 rounded-xl bg-emerald-950 text-emerald-400 flex items-center justify-center border border-emerald-800">
               <BarChart3 className="w-5 h-5" />
@@ -352,7 +300,7 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
           </div>
         </div>
 
-        {/* SELECTOR EN CASCADA */}
+        {/* SELECTOR EN CASCADA (Filtro por territorio) */}
         <CascadingLocationSelect
           selectedMunicipio={selectedMunicipio}
           selectedParroquia={selectedParroquia}
@@ -363,21 +311,21 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
           onReset={resetLocationFilters}
         />
 
-        {/* Listado de Jefes */}
+        {/* Listado de Jefes con Búsqueda Cruzada */}
         <div className="glass-panel rounded-2xl p-6 border border-slate-800 shadow-xl space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h2 className="text-lg font-bold text-white">Estructura 1X10 COMUNAL GUARICO</h2>
               <p className="text-xs text-slate-400">
-                Mostrando <strong className="text-sky-400">{filteredJefes.length}</strong> Jefes de Patrulla
+                Mostrando <strong className="text-sky-400">{filteredJefes.length}</strong> Patrullas (Busca por Jefe o Integrante)
               </p>
             </div>
 
             <div className="flex flex-col sm:flex-row items-center gap-3">
-              <div className="relative w-full sm:w-64">
+              <div className="relative w-full sm:w-72">
                 <input
                   type="text"
-                  placeholder="Buscar por Nombre o Cédula..."
+                  placeholder="Buscar Cédula o Nombre (Jefe o Integrante)..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white text-xs placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
@@ -430,47 +378,64 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
                 {filteredJefes.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-slate-400 text-xs">
-                      No se encontraron Jefes de Patrulla con los criterios seleccionados.
+                      No se encontraron registros con los criterios seleccionados.
                     </td>
                   </tr>
                 ) : (
-                  filteredJefes.map((jefe) => (
-                    <tr key={jefe.id} className="hover:bg-slate-900/40 transition-colors">
-                      <td className="py-3.5 px-4 font-bold text-white">
-                        {jefe.nombre}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-300 text-xs font-mono">
-                        {jefe.cedula}
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-300 text-xs">
-                        <div className="font-semibold text-slate-200">{jefe.municipio || 'MP. INFANTE'}</div>
-                        <div className="text-[11px] text-slate-400">{jefe.parroquia || 'PQ. VALLE DE LA PASCUA'}</div>
-                      </td>
-                      <td className="py-3.5 px-4 text-slate-400 text-xs flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                        <span className="truncate max-w-[200px]" title={jefe.comunidad}>{jefe.comunidad}</span>
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
-                          jefe.isCompleted
-                            ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-                            : 'bg-sky-950 text-sky-300 border border-sky-800'
-                        }`}>
-                          {jefe.isCompleted && <CheckCircle2 className="w-3.5 h-3.5" />}
-                          <span>{jefe.totalIntegrantes} / 10 Integrantes</span>
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <button
-                          onClick={() => handleOpenJefeModal(jefe)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-950 hover:bg-sky-900 text-sky-300 text-xs font-semibold border border-sky-800 transition-colors"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Ver Integrantes</span>
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                  filteredJefes.map((jefe) => {
+                    // Detectar si la búsqueda coincide con algún integrante de este jefe
+                    const matchedMember = searchTerm
+                      ? jefe.integrantes?.find(
+                          (i) =>
+                            i.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            i.cedula.toLowerCase().includes(searchTerm.toLowerCase())
+                        )
+                      : null;
+
+                    return (
+                      <tr key={jefe.id} className="hover:bg-slate-900/40 transition-colors">
+                        <td className="py-3.5 px-4 font-bold text-white">
+                          <div>{jefe.nombre}</div>
+                          {matchedMember && (
+                            <div className="text-[11px] text-amber-400 font-normal mt-0.5 flex items-center gap-1">
+                              <span>↳ Coincide integrante:</span>
+                              <strong className="underline">{matchedMember.nombre} ({matchedMember.cedula})</strong>
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-300 text-xs font-mono">
+                          {jefe.cedula}
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-300 text-xs">
+                          <div className="font-semibold text-slate-200">{jefe.municipio || 'MP. INFANTE'}</div>
+                          <div className="text-[11px] text-slate-400">{jefe.parroquia || 'PQ. VALLE DE LA PASCUA'}</div>
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-400 text-xs flex items-center gap-1.5">
+                          <MapPin className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                          <span className="truncate max-w-[200px]" title={jefe.comunidad}>{jefe.comunidad}</span>
+                        </td>
+                        <td className="py-3.5 px-4 text-center">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
+                            jefe.isCompleted
+                              ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                              : 'bg-sky-950 text-sky-300 border border-sky-800'
+                          }`}>
+                            {jefe.isCompleted && <CheckCircle2 className="w-3.5 h-3.5" />}
+                            <span>{jefe.totalIntegrantes} / 10 Integrantes</span>
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <button
+                            onClick={() => handleOpenJefeModal(jefe)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-950 hover:bg-sky-900 text-sky-300 text-xs font-semibold border border-sky-800 transition-colors"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Ver Integrantes</span>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -478,7 +443,7 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
         </div>
       </main>
 
-      {/* MODAL CON IMPRESIÓN PDF */}
+      {/* MODAL DETALLES DEL JEFE / INTEGRANTES */}
       {(selectedJefeModal || loadingJefeDetails) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in no-print">
           <div className="glass-panel w-full max-w-2xl rounded-2xl p-6 border border-slate-800 shadow-2xl relative max-h-[90vh] flex flex-col">
@@ -513,7 +478,6 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
                     <button
                       onClick={handlePrintPDF}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shadow-lg shadow-sky-600/20 transition-all"
-                      title="Imprimir o Guardar en PDF con formato oficial"
                     >
                       <Printer className="w-3.5 h-3.5" />
                       <span>Imprimir / PDF</span>
@@ -522,7 +486,6 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
                     <button
                       onClick={handleDownloadStaticPDF}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors"
-                      title="Descargar reporte plano"
                     >
                       <FileDown className="w-3.5 h-3.5 text-sky-400" />
                       <span>Descargar Reporte</span>
@@ -531,12 +494,12 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
                 </div>
 
                 <div className="overflow-y-auto space-y-2.5 pr-2 flex-1">
-                  {selectedJefeModal.integrantes.length === 0 ? (
+                  {selectedJefeModal.integrantes?.length === 0 ? (
                     <div className="p-8 text-center text-slate-400 text-xs bg-slate-900/60 rounded-xl border border-slate-800">
                       Este Jefe de Patrulla aún no ha registrado integrantes en su 1x10.
                     </div>
                   ) : (
-                    selectedJefeModal.integrantes.map((member: any, idx: number) => (
+                    selectedJefeModal.integrantes?.map((member: any, idx: number) => (
                       <div
                         key={member.id}
                         className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between"
@@ -564,7 +527,7 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
                 </div>
 
                 <div className="mt-5 pt-3 border-t border-slate-800 flex justify-between items-center text-xs text-slate-400">
-                  <span>Total: {selectedJefeModal.integrantes.length} / 10 integrantes</span>
+                  <span>Total: {selectedJefeModal.integrantes?.length || 0} / 10 integrantes</span>
                   <button
                     onClick={() => setSelectedJefeModal(null)}
                     className="px-4 py-2 rounded-xl bg-slate-800 text-slate-200 font-semibold hover:bg-slate-700"
@@ -578,7 +541,7 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
         </div>
       )}
 
-      {/* REPORTE IMPRESO OFICIAL (PRINTABLE REPORT PDF) */}
+      {/* REPORTE IMPRESO OFICIAL */}
       {selectedJefeModal && (
         <div className="printable-report hidden print:block">
           <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
@@ -594,7 +557,7 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
               <p><strong>MUNICIPIO:</strong> {selectedJefeModal.municipio || 'MP. INFANTE'}</p>
               <p><strong>PARROQUIA:</strong> {selectedJefeModal.parroquia || 'PQ. VALLE DE LA PASCUA'}</p>
               <p><strong>COMUNA / CIRCUITO:</strong> {selectedJefeModal.comunidad}</p>
-              <p><strong>TOTAL INTEGRANTES:</strong> {selectedJefeModal.integrantes.length} / 10</p>
+              <p><strong>TOTAL INTEGRANTES:</strong> {selectedJefeModal.integrantes?.length || 0} / 10</p>
             </div>
 
             <h3 style={{ fontSize: '15px', borderBottom: '1px solid #ccc', paddingBottom: '5px' }}>LISTADO DE INTEGRANTES PATRULLADOS (1x10)</h3>
@@ -610,7 +573,7 @@ ${selectedJefeModal.integrantes.map((m: any, i: number) =>
                 </tr>
               </thead>
               <tbody>
-                {selectedJefeModal.integrantes.map((m: any, idx: number) => (
+                {selectedJefeModal.integrantes?.map((m: any, idx: number) => (
                   <tr key={m.id}>
                     <td style={{ border: '1px solid #ddd', padding: '8px', fontWeight: 'bold' }}>{idx + 1}</td>
                     <td style={{ border: '1px solid #ddd', padding: '8px' }}>{m.cedula}</td>

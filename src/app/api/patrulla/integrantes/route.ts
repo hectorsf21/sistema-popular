@@ -9,7 +9,6 @@ import {
 } from '@/lib/store';
 import { verifyPersonInExcel } from '@/lib/python';
 
-// POST: Agregar nuevo integrante al 1x10 (Padrón o Registro Manual)
 export async function POST(request: Request) {
   try {
     const session = await getSession();
@@ -18,13 +17,12 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { cedula, telefono, responsabilidad, isManual, nombre, fechaNacimiento, comunidad } = body;
+    const { cedula, telefono, responsabilidad, isManual, nombre, fechaNacimiento, municipio, parroquia, comunidad } = body;
 
     if (!cedula) {
       return NextResponse.json({ success: false, message: 'La cédula es requerida.' }, { status: 400 });
     }
 
-    // El teléfono siempre es obligatorio
     if (!telefono || !telefono.trim()) {
       return NextResponse.json({ success: false, message: 'El número de teléfono es obligatorio.' }, { status: 400 });
     }
@@ -54,6 +52,8 @@ export async function POST(request: Request) {
       cedula: cleanCedula,
       nombre: '',
       fechaNacimiento: '',
+      municipio: (municipio && municipio.trim()) || jefe?.municipio || 'MP. INFANTE',
+      parroquia: (parroquia && parroquia.trim()) || jefe?.parroquia || 'PQ. VALLE DE LA PASCUA',
       comunidad: (comunidad && comunidad.trim()) || session.comunidad || 'Comunidad General',
       telefono: telefono.trim(),
       responsabilidad: responsabilidad || 'Patrullado'
@@ -64,13 +64,12 @@ export async function POST(request: Request) {
       if (!nombre || !fechaNacimiento || !comunidad) {
         return NextResponse.json({
           success: false,
-          message: 'Todos los campos son obligatorios (nombre, fecha de nacimiento y circuito comunal).'
+          message: 'Todos los campos son obligatorios.'
         }, { status: 400 });
       }
 
       memberData.nombre = nombre.trim().toUpperCase();
       memberData.fechaNacimiento = fechaNacimiento;
-      memberData.comunidad = comunidad.trim();
     } else {
       // 4. Caso Búsqueda en Padrón
       const excelCheck = await verifyPersonInExcel(cleanCedula);
@@ -84,6 +83,8 @@ export async function POST(request: Request) {
       const person = excelCheck.data;
       memberData.nombre = person.nombre;
       memberData.fechaNacimiento = person.fechaNacimiento;
+      memberData.municipio = person.municipio || memberData.municipio;
+      memberData.parroquia = person.parroquia || memberData.parroquia;
       memberData.comunidad = person.comunidad || memberData.comunidad;
     }
 
@@ -94,6 +95,8 @@ export async function POST(request: Request) {
       nombre: memberData.nombre,
       fechaNacimiento: memberData.fechaNacimiento,
       telefono: memberData.telefono,
+      municipio: memberData.municipio,
+      parroquia: memberData.parroquia,
       comunidad: memberData.comunidad,
       responsabilidad: memberData.responsabilidad
     });
@@ -109,7 +112,6 @@ export async function POST(request: Request) {
   }
 }
 
-// PUT: Editar integrante existente
 export async function PUT(request: Request) {
   try {
     const session = await getSession();
@@ -147,7 +149,6 @@ export async function PUT(request: Request) {
   }
 }
 
-// DELETE: Eliminar integrante del 1x10
 export async function DELETE(request: Request) {
   try {
     const session = await getSession();
